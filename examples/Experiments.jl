@@ -16,9 +16,9 @@ function fastICA(X,c)
   # n x m = Samples x Dimensions
   # c = Sources
   (n,m) = size(X)
-  w = rand((m,c))
+  w = ones(m,c)
   for p = 1:c
-    for iters = 1:Int64(1e4)
+    for iters = 1:5
       w[p,:] = 1/n * Xw' * tanh(w[p,:]' * Xw')' - 1/n * ((sech(w[p,:]' * Xw')).^2 * ones(n) * w[p,:]')'
       sw = zeros(m)
       for j = 1:(p-1)
@@ -65,3 +65,26 @@ w, s_ica = fastICA(x,2)
 
 Plots.scatter(s_ica[:,1],s_ica[:,2],leg=false,border=false, markersize=1)
 Plots.savefig("figures/s_retrieved")
+
+include("../src/KernelICA.jl")
+
+###### Trying things
+w = kgv(xw')
+s = (w^-1) * xw'
+Plots.scatter(xw'[1,:],xw'[2,:],leg=false,border=false, markersize=1)
+Plots.scatter(s[1,:],s[2,:],leg=false,border=false, markersize=1)
+
+#### A more interesting Distribution
+
+T = TDist(1.5)
+s1b = rand(T,Int(1e4))
+s2b = rand(T,Int(1e4))
+sb = [s1b s2b]'
+Ab = [1 1; 0 2]
+xb = Ab * sb
+
+Plots.scatter(sb[1,:],sb[2,:],leg=false,border=false, markersize=1)
+Plots.scatter(xb[1,:],xb[2,:],leg=false,border=false, markersize=1)
+
+xbc, mb = center(xb)
+xbw, Eb, Db = whiten(xbc)

@@ -1,7 +1,7 @@
 include("preprocess.jl")
 
 function fastICA(X,c)
-  Xc, mx = center(X)
+  Xc, mx = centering(X)
   Xw , E, D = whiten(Xc)
   # n x m = Samples x Dimensions
   # c = Sources

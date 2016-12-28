@@ -1,6 +1,6 @@
-function center(X)
+function centering(X)
   m = mapslices(mean,X,1)
-  return X .-m , m
+  return X .- m , m
 end
 
 function whiten(X)

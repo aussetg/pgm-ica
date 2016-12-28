@@ -27,7 +27,7 @@ function IncompleteChol(K::Array{Float64}, eta = 1e-2)
     Kp[i,:], Kp[j,:] = Kp[j,:], Kp[i,:]
     # Update G
     G[i,1:i], G[j,1:i] = G[j,1:i], G[i,1:i]
-    G[i,i] = sqrt(diag(G)[j]) # L'algorithme dit d'utiliser Kp[i,i]: ne marche pas
+    G[i,i] = sqrt(diag(G)[j]) #The paper uses Kp[i,i]: doesn't work
     # ith column of G
     G[(i+1):N, i] = (Kp[(i+1):N,i] - G[(i+1):N, 1:(i-1)] * G[i, 1:(i-1)])/G[i,i]
     # Update only diagonal elements
