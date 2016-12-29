@@ -6,19 +6,19 @@ include("FastICA.jl")
 Helper function to create the Gram matrix associated to a Gaussian symmetrix
 kernel and parameter sigma.
 """
-function gramGauss(x, sigma = 1e-2)
+function gramGauss(x, gamma = 10)
   N = size(x,1)
-  K = Matrix{Float64}(N,N)
+  K = eye(N)
   for i = 1:N
-    for j = 1:i
-      K[i,j] = exp(-sigma*(x[i]-x[j])^2)
-      K[j,i] = exp(-sigma*(x[i]-x[j])^2)
+    for j = 1:(i-1)
+      K[i,j] = exp(-gamma*(x[i]-x[j])^2)
+      K[j,i] = K[i,j]
     end
   end
   # TODO: PAGE 11 SAYS WE NEED TO CENTER THE GRAM MATRIX !
   # TODO: DON'T FORGET TO DO IT
-  K, _ = centering(K)
-  return K
+  N0 = eye(N) - 1/N * ones(N,N)
+  return N0*K*N0
 end
 
 """
@@ -43,6 +43,9 @@ using the fact that the Gram matrix only changes column wise for each
 partial derivative.
 """
 function updateJ(s,i,j,Rs,Us,Ms)
+  if (i>j)
+    i, j = j, i
+  end
   Msp = Ms # New sizes
   Rsp = Rs
   Usp = Us
@@ -84,24 +87,28 @@ This function compute finite differences (only for KGV at the moment)
 using the fact that the Gram matrix only changes column wise for each
 partial derivative.
 """
-function finiteD(x, w , ε = 1e-2)
+function finiteD(x, w , ε = 1e-3)
   m, N = size(w)
   wd = zeros(m,N)
-  s0 = w * x
+  s0 = w' * x
   J0, Rs, Us, Ms = kgvc!(s0)
   for i = 1:(m-1)
     for j = (i+1):m
       s = s0
-      s[[i, j],:]=[cos(ε) sin(ε) ; sin(-ε) cos(ε)]*s[[i, j],:]
-      J=updateJ(s,i,j,Rs,Us,Ms)
-      wd[i,j]=(J-J0)/ε
-      wd[j,i]=-(J-J0)/ε
+      s[[i, j],:] = [cos(ε) sin(ε) ; sin(-ε) cos(ε)]*s[[i, j],:]
+      J = updateJ(s,i,j,Rs,Us,Ms)
+      wd[i,j] = (J-J0)/ε
+      wd[j,i] = -(J-J0)/ε
     end
   end
   return J0, w*wd
 end
 
-function kgvc(X, k = 1e-3)
+"""
+  kgvc(X[, k])
+
+"""
+function kgvc(X, k = 2*1e-3)
   m, N = size(X) # Components, Observations
   Ms = zeros(Int,m)
   Rs = Array{Array}(m) # The R matrices
@@ -132,9 +139,9 @@ function kgvc(X, k = 1e-3)
 end
 
 """
-  kgv!(X[, k])
+  kgvc!(X[, k])
 
-Same as kgv except returns additional informations needed to rebuild Rk
+Same as kgvc except returns additional informations needed to rebuild Rk
 """
 function kgvc!(X, k = 1e-3)
   m, N = size(X) # Components, Observations
@@ -177,9 +184,9 @@ SIAM Journal on Matrix Analysis and Applications, 20(2), 303–353.
 https://doi.org/10.1137/S0895479895290954
 """
 function geod(w,h,t)
-  A=w*h
+  A=w'*h
   A=0.5*(A-A')
-  MN=exp(t*A)
+  MN=expm(t*A)
   wt=w*MN
   return wt, h*MN
 end
@@ -330,10 +337,12 @@ function kgv(X)
   xc, _ = centering(X')
   xw, E, D = whiten(xc)
   w, _ = fastICA(xw,m)
+  #w = w'
+  #w = eye(m)
   x = xw'
-  ε = 1e-2
+  ε = 1e-3
   err = 1
-  maxiter = 2
+  maxiter = 15
   iters = 0
   b = 1
   while (err > ε) && iters < maxiter
@@ -352,5 +361,5 @@ function kgv(X)
     iters = iters + 1
     J = Jmin
   end
-  return w
+  return w, w'*xw'
 end

@@ -18,5 +18,5 @@ function fastICA(X,c)
       w[p,:] = w[p,:]/norm(w[p,:])
     end
   end
-  return w, (w * Xw')'
+  return w, (w' * Xw')'
 end

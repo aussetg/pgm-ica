@@ -3,6 +3,11 @@ function centering(X)
   return X .- m , m
 end
 
+function centeringt(X)
+  m = mapslices(mean,X,2)
+  return X .- m , m
+end
+
 function whiten(X)
   F = eigfact(X' * X)
   D = diagm(F[:values])
