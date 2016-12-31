@@ -1,4 +1,4 @@
-function center(X)
+function centering(X)
   m = mapslices(mean,X,1)
   return X .-m , m
 end
@@ -11,7 +11,7 @@ function whiten(X)
 end
 
 function fastICA(X,c)
-  Xc, mx = center(X)
+  Xc, mx = centering(X)
   Xw , E, D = whiten(Xc)
   # n x m = Samples x Dimensions
   # c = Sources
@@ -51,7 +51,7 @@ x = (A * s')'
 Plots.scatter(x[:,1],x[:,2],leg=false,border=false, markersize=1)
 Plots.savefig("figures/x")
 
-xc , m = center(x)
+xc , m = centering(x)
 
 Plots.scatter(xc[:,1],xc[:,2],leg=false,border=false, markersize=1)
 Plots.savefig("figures/x_c")
@@ -63,7 +63,7 @@ Plots.savefig("figures/x_w")
 
 w, s_ica = fastICA(x,2)
 
-Plots.scatter(s_ica[:,1],s_ica[:,2],leg=false,border=false, markersize=1)
+Plots.scatter((w'*xw')[1,:],(w'*xw')[2,:],leg=false,border=false, markersize=1)
 Plots.savefig("figures/s_retrieved")
 
 include("../src/KernelICA.jl")
@@ -76,9 +76,13 @@ Plots.scatter(s[1,:],s[2,:],leg=false,border=false, markersize=1)
 
 #### A more interesting Distribution
 
-T = TDist(1.5)
-s1b = rand(T,Int(1e4))
-s2b = rand(T,Int(1e4))
+using Distributions
+using Plots
+gr()
+
+T = Truncated(TDist(1.5),-20,20)
+s1b = rand(T,Int(1e3))
+s2b = rand(T,Int(1e3))
 sb = [s1b s2b]'
 Ab = [1 1; 0 2]
 xb = Ab * sb
@@ -86,5 +90,10 @@ xb = Ab * sb
 Plots.scatter(sb[1,:],sb[2,:],leg=false,border=false, markersize=1)
 Plots.scatter(xb[1,:],xb[2,:],leg=false,border=false, markersize=1)
 
-xbc, mb = center(xb)
+xbc, mb = centering(xb')
 xbw, Eb, Db = whiten(xbc)
+xbw = xbw'
+
+w, sr = kgv(xb)
+
+finiteD(xbw,w)

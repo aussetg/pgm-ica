@@ -6,7 +6,7 @@ include("FastICA.jl")
 Helper function to create the Gram matrix associated to a Gaussian symmetrix
 kernel and parameter sigma.
 """
-function gramGauss(x, gamma = 10)
+function gramGauss(x, gamma = 1e3)
   N = size(x,1)
   K = eye(N)
   for i = 1:N
@@ -340,7 +340,7 @@ function kgv(X)
   #w = w'
   #w = eye(m)
   x = xw'
-  ε = 1e-3
+  ε = 1e-5
   err = 1
   maxiter = 15
   iters = 0

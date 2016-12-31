@@ -7,6 +7,7 @@ function fastICA(X,c)
   # c = Sources
   (n,m) = size(X)
   w = rand((m,c))
+  #w = ones(m,c)
   for p = 1:c
     for iters = 1:Int64(1e4)
       w[p,:] = 1/n * Xw' * tanh(w[p,:]' * Xw')' - 1/n * ((sech(w[p,:]' * Xw')).^2 * ones(n) * w[p,:]')'
@@ -18,5 +19,5 @@ function fastICA(X,c)
       w[p,:] = w[p,:]/norm(w[p,:])
     end
   end
-  return w, (w' * Xw')'
+  return w, (w * Xw')'
 end
