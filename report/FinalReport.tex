@@ -1,0 +1,101 @@
+\documentclass[a4paper,BCOR=5mm,oneside,openany]{scrreprt}
+\usepackage{fontspec}
+\usepackage{lmodern}
+\usepackage{amsmath,amsthm,mathtools}
+\usepackage{amsfonts,amssymb}
+\usepackage{graphicx,overpic}
+\usepackage{hyperref}
+\usepackage{microtype}
+\usepackage{dsfont}
+\usepackage{booktabs}
+\usepackage{fullpage}
+\usepackage{float}
+\usepackage{subfig}
+\bibliography{Biblio}
+\usepackage[backend=biber,hyperref=true,backref=true,style=verbose-ibid,maxcitenames=3]{biblatex}
+\usepackage{scrlayer-scrpage}
+\pagestyle{scrheadings}
+\usepackage[disable]{todonotes}
+%% Header
+\setheadsepline{.4pt}
+\clearscrheadings
+\automark[chapter]{chapter}
+\ihead{\headmark}
+\ohead[\pagemark]{\pagemark}
+\cfoot[]{}
+%% Footer
+\usepackage[bottom=2cm,footskip=8mm]{geometry}
+\usepackage{pgfplots}
+
+\pgfplotsset{grid style={solid,black}}
+\pgfplotsset{minor grid style={dashed,black}}
+%% Font
+%\usepackage[fullfamily,opticals,onlymath]{MinionPro}
+%\setmainfont{Minion Pro}
+
+
+\DeclareCiteCommand{\footpartcite}[\mkbibfootnote]
+  {\usebibmacro{prenote}}
+  {\usebibmacro{citeindex}%
+   %\mkbibbrackets{\usebibmacro{cite}}%
+   %\setunit{\addnbspace}
+   \printnames{labelname}%
+   \setunit{\labelnamepunct}
+   \printfield[citetitle]{title}%
+   \newunit
+   \printfield{year}}
+  {\addsemicolon\space}
+  {\usebibmacro{postnote}}
+  
+\hypersetup{
+    colorlinks,
+    linkcolor={red!50!black},
+    citecolor={blue!50!black},
+    urlcolor={blue!80!black},
+    linktoc=page
+}
+
+\graphicspath{{./figures/}}
+
+\newcommand{\sgn}{\operatorname{sgn}}
+\newcommand{\conv}{\operatorname{conv}}
+\newcommand{\vect}{\operatorname{vect}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\newcommand*\diff{\mathop{}\!\mathrm{d}}
+\newcommand{\Var}{\mathrm{Var}}
+\newcommand*\ri{\mathop{}\!\mathrm{ri}}
+\newcommand*\aff{\mathop{}\!\mathrm{aff}}
+\newcommand*\dom{\mathop{}\!\mathrm{dom}}
+\newcommand*\epi{\mathop{}\!\mathrm{epi}}
+\newcommand*\diag{\mathop{}\!\mathrm{diag}}
+\newcommand*\cov{\mathop{}\!\mathrm{cov}}
+\newcommand*\var{\mathop{}\!\mathrm{var}}
+\newcommand*\corr{\mathop{}\!\mathrm{corr}}
+
+
+\begin{document}
+\input{title}
+
+\chapter{The ICA framework}
+
+In the physical world it is rare for the quantity of interest and the quantity measured to perfectly match. Scientists are are used to dealing with measurements mixed with random noise but this is only one way information may be unavailable.
+A very common situation is when our signal of interest, that we will from now on call $s \in \mathcal{R}^{m \times n}$ is actually mixed with itself. To try to recover our signal $s$ we will set up a certain number of recording device, generally $n$ and from our recorded signals try to recover the sources. If we assume the sources are linearly mixed our problem is then:
+
+\begin{align*}
+	x = A s
+\end{align*}
+
+where $x \in \mathcal{R}^{k \times n}$, $A \in \mathcal{R}^{k \times m}$. While it is not necessarily the case or even needed from now on we will assume $k = m$ so that the number of recorded signals equals the number of sources, the problem is then well posed.
+
+If we somehow knew $A$ the mixing matrix then this problem would be easy to solve and one would only need to solve $s = A^{-1} x$, but in general it's impossible to obtain the matrix $A$ and the problem seems intractable, the number of unknowns dwarfing the number of known quantities.
+
+We will see that in fact and quite suprisingly the sole hypothesis of the independence of the components of $s$ is enough to find a solution to the problem. Because of the way the problem is posed one cannot hope to recover the real $s$ as for example a scaling or permutation of $A$ leaves the problem unchanged and we therefore cannot hope to recover the magnitudes (and therefore signs) of the $s_i$ or their order.
+
+\tableofcontents
+
+\listoftodos
+
+\printbibliography
+
+\end{document}
