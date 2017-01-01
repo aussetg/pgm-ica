@@ -18,7 +18,7 @@ function fastICA(X,c)
   (n,m) = size(X)
   w = ones(m,c)
   for p = 1:c
-    for iters = 1:5
+    for iters = 1:10
       w[p,:] = 1/n * Xw' * tanh(w[p,:]' * Xw')' - 1/n * ((sech(w[p,:]' * Xw')).^2 * ones(n) * w[p,:]')'
       sw = zeros(m)
       for j = 1:(p-1)
@@ -96,4 +96,30 @@ xbw = xbw'
 
 w, sr = kgv(xb)
 
+w = eye(2)
+
 finiteD(xbw,w)
+
+w, sr = kgv(xbw)
+wf, sf = fastICA(xbw',2)
+Plots.scatter(sf[:,1],sf[:,2],leg=false,border=false, markersize=1)
+Plots.savefig("figures/sb_ica_orig")
+
+Plots.scatter(sb[1,:],sb[2,:],leg=false,border=false, markersize=1)
+Plots.savefig("figures/sb_orig")
+Plots.scatter(xb[1,:],xb[2,:],leg=false,border=false, markersize=1)
+Plots.savefig("figures/xb")
+Plots.scatter(xbw[1,:],xbw[2,:],leg=false,border=false, markersize=1)
+Plots.savefig("figures/xb_w")
+Plots.scatter(sr[1,:],sr[2,:],leg=false,border=false, markersize=1)
+Plots.savefig("figures/sb_kgv")
+
+#### Mixing images for poster
+
+using Images, Colors, FixedPointNumbers
+using ImageMagick
+using TestImages
+
+lena = load("../data/lena.tif")
+fabio = load("../data/fabio.tif")
+house = load("../data/boat.tif")
