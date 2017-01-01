@@ -8,9 +8,10 @@ and M the rank of the approximation such that:
 |P*K*P' - G*G'| < eta
 See page 20.
 """
-function IncompleteChol(K::Array{Float64}, eta = 1e-6)
+function IncompleteChol(K::Array{Float64}, kappa = 2*1e-3)
   # let's chose eta = 10-3 Nk / 2 as in the paper
   N = size(K,1)
+  eta = 1e-3 * 0.5*N*kappa
   i = 1
   Kp = K
   P = sparse(eye(N))

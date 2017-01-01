@@ -6,7 +6,7 @@ include("FastICA.jl")
 Helper function to create the Gram matrix associated to a Gaussian symmetrix
 kernel and parameter sigma.
 """
-function gramGauss(x, gamma = 1e3)
+function gramGauss(x, gamma = 2)
   N = size(x,1)
   K = eye(N)
   for i = 1:N
@@ -143,7 +143,7 @@ end
 
 Same as kgvc except returns additional informations needed to rebuild Rk
 """
-function kgvc!(X, k = 1e-3)
+function kgvc!(X, k = 2*1e-3)
   m, N = size(X) # Components, Observations
   Ms = zeros(Int,m)
   Rs = Array{Array}(m) # The R matrices
@@ -334,12 +334,10 @@ Perform ICA using the KGV contrast function and using gradient descent
 function kgv(X)
   m, N = size(X)
   # For our intitial guess we use FastICA
-  xc, _ = centering(X')
-  xw, E, D = whiten(xc)
-  w, _ = fastICA(xw,m)
-  #w = w'
+  w, _ = fastICA(X',m)
+  w = w'
   #w = eye(m)
-  x = xw'
+  x = X
   ε = 1e-5
   err = 1
   maxiter = 15
@@ -361,5 +359,5 @@ function kgv(X)
     iters = iters + 1
     J = Jmin
   end
-  return w, w'*xw'
+  return w, (E' * D.^2 * E) * w'*xw'
 end
