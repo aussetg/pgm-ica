@@ -1,10 +1,16 @@
 include("preprocess.jl")
 
+function randO(m,n)
+  w = rand(m,m) - 0.5
+  Q, R = qr(w)
+  return w[1:m,1:n]
+end
+
 function fastICA(X,c)
   # n x m = Samples x Dimensions
   # c = Sources
   (n,m) = size(X)
-  w = rand((m,c))
+  w = randO(m,c)
   #w = ones(m,c)
   for p = 1:c
     for iters = 1:Int64(50)
@@ -17,5 +23,5 @@ function fastICA(X,c)
       w[p,:] = w[p,:]/norm(w[p,:])
     end
   end
-  return w, (w * X')'
+  return w, (w' * X')'
 end
