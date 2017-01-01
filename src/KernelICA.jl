@@ -359,5 +359,5 @@ function kgv(X)
     iters = iters + 1
     J = Jmin
   end
-  return w, (E' * D.^2 * E) * w'*xw'
+  return w, w'*xw
 end
