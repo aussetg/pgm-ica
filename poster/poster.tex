@@ -48,7 +48,7 @@
 			\begin{minipage}{.98\textwidth}  % tweaks the width, makes a new \textwidth
 				\parbox[t][\columnheight]{\textwidth}{ % must be some better way to set the the height, width and textwidth simultaneously
 					\begin{myblock}{Introduction}
-					It is rare for the quantity of interest and the quantity measured to perfectly match often our signal of interest $s \in \mathcal{R}^{m \times n}$ is actually mixed with itself. We will set up a certain number of recording device, generally $n$ and from our recorded signals try to recover the sources. If we assume the sources are linearly mixed our problem is then:
+					It is rare for the quantity of interest and the quantity measured to perfectly match often our signal of interest $s \in \mathcal{R}^{m \times n}$ is actually mixed with itself. We will set up a certain number of recording devices, generally $n$ and from our recorded signals try to recover the sources. If we assume the sources are linearly mixed our problem is then:
 
 						\begin{align*}
 							x = A s
@@ -61,7 +61,7 @@
 						Because of the way the problem is posed one cannot hope to recover the real $s$ as for example a scaling or permutation of $A$ leaves the problem unchanged and we therefore cannot hope to recover the magnitudes (and therefore signs) of the $s_i$ or their order.
 					\end{myblock}\vfill
 					\begin{myblock}{ICA as an eigenvalue problem}
-						We want to optimize a measure of independance of our estimated sources. Most approaches try to optimize an approximation of the mutual information. The measure chosen here \cite{Bach2002} is for two variables:
+						We want to optimize a measure of independence of our estimated sources. Most approaches try to optimize an approximation of the mutual information. The measure chosen here \cite{Bach2002} is for two variables:
 						\begin{align*}
 							\rho_\mathcal{F} = \max_{f_1, f_2 \in \mathcal{F}} \corr (f_1(x_1), f_2 (x_2))
 						\end{align*}
@@ -69,7 +69,7 @@
 						\begin{align*}
 							\rho_\mathcal{F} = \max_{f_1, f_2 \in \mathcal{F}} \corr ( \langle \Phi_1 (x_1), f_1 \rangle , \langle \Phi_2 (x_2), f_2 \rangle)
 						\end{align*}
-						We recognize a CCA problem and if we note $K_1$ and $K_2$ the respective Gram matrices (assuming they are centered) we get the problem:
+						We recognize a CCA problem and if we note $K_1$ and $K_2$ the respective Gram matrices (assuming they are centred) we get the problem:
 						\begin{align*}
 							\begin{pmatrix}
 								0 & K_1 K_2 \\
@@ -84,7 +84,7 @@
 								\alpha_1 \\ \alpha_2
 							\end{pmatrix}
 						\end{align*}
-						This problem is unfortunately not well posed at it will always be equal to $0$ for most kernels, we therefore adopt a regularized version as an estimator:
+						This problem is unfortunately not well posed and will always be equal to $0$ for most kernels, we therefore adopt a regularized version as an estimator:
 						\begin{align*}
 							\rho_\mathcal{F} = \max_{f_1, f_2 \in \mathcal{F}} \frac{\cov (f_1(x_1), f_2 (x_2))}{(\var f_1 (x_1) + \kappa \lVert f_1 \rVert^2 _\mathcal{F} )^{1/2} (\var f_2 (x_2) + \kappa \lVert f_2 \rVert^2 _\mathcal{F} )^{1/2}}
 						\end{align*}
@@ -162,7 +162,7 @@
 						\begin{align*}
 							\det \tilde{\mathcal{K}}_\kappa = \det \mathcal{R}_\kappa
 						\end{align*}
-						We will therefore make heavy use of incomplete Choleski decompositions to reduce the computational complexity.
+						We will therefore make heavy use of incomplete Choleski decomposition to reduce the computational complexity.
 					\end{myblock}\vfill
 		}\end{minipage}\end{beamercolorbox}
 	\end{column}
