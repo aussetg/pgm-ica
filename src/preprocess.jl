@@ -9,8 +9,17 @@ function centeringt(X)
 end
 
 function whiten(X)
-  F = eigfact(X' * X)
-  D = diagm(F[:values])
-  E = F[:vectors]
-  return (E * D^(-0.5) * E' * X')', E, D
+  C = (X' * X)
+  U, S, V = svd(C)
+  D = S + 1e-7
+  Ds = sparse(diagm(D.^(-0.5)))
+  return (U * Ds * U' * X')', U, diagm(D)
+end
+
+function whitent(X)
+  C = (X * X')
+  U, S, V = svd(C)
+  D = S + 1e-7
+  Ds = sparse(diagm(D.^(-0.5)))
+  return (U * Ds * U' * X)', U, diagm(D)
 end
