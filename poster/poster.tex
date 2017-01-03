@@ -195,39 +195,20 @@
 					\begin{myblock}{Unmixing images}
 						\begin{figure}[H]
 						  \centering
-							\subfloat{\includegraphics[width=0.20\textwidth]{img/lena}}
-						  \hfill
-							\subfloat{\includegraphics[width=0.20\textwidth]{img/fabio}}
-						  \hfill
-							\subfloat{\includegraphics[width=0.20\textwidth]{img/elaine}}
-						  \caption{Original images}
-						\end{figure}
-						\begin{figure}[H]
-						  \centering
-							\subfloat{\includegraphics[width=0.20\textwidth]{img/mix1}}
-						  \hfill
-							\subfloat{\includegraphics[width=0.20\textwidth]{img/mix2}}
-						  \hfill
-							\subfloat{\includegraphics[width=0.20\textwidth]{img/mix3}}
-						  \caption{Mixed images}
-						\end{figure}
-						\begin{figure}[H]
-						  \centering
-							\subfloat{\includegraphics[width=0.20\textwidth]{img/s1}}
-						  \hfill
-							\subfloat{\includegraphics[width=0.20\textwidth]{img/s2}}
-						  \hfill
-							\subfloat{\includegraphics[width=0.20\textwidth]{img/s3}}
-						  \caption{Retrieved images}
+							\subfloat{\includegraphics[width=0.6\textwidth]{img/imagemixing}}
+						  \caption{$3$ images mixed linearly then unmixed}
 						\end{figure}
 					\end{myblock}\vfill
 					\begin{myblock}{Independent images basis}
 						This time the quantity of interest is $W$ the unmixing matrix, $s$ representing the random coefficients in the ICA basis of natural images. In this setting the columns of $A$ form the basis and the columns of $W$ the detectors.
 						\begin{figure}[H]
 							\centering
-							\subfloat{\includegraphics[width=0.9\textwidth]{img/basis}}
+							\subfloat{\includegraphics[width=0.6\textwidth]{img/basis}}
 							\caption{ICA basis of the $3$ previous images}
 						\end{figure}
+					\end{myblock}\vfill
+					\begin{myblock}{Conclusion}
+						Treating the problem as a semi-parametric problem gives a tractable solution. The problem becomes a pure optimization problem and improvements can be made by better optimization techniques that exploits the geometry. (See \cite{Shen2009}).
 					\end{myblock}\vfill
 					\begin{myblock}{References}
 						\footnotesize
