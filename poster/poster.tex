@@ -162,7 +162,7 @@
 						\begin{align*}
 							\det \tilde{\mathcal{K}}_\kappa = \det \mathcal{R}_\kappa
 						\end{align*}
-						We will therefore make heavy use of incomplete Choleski decompositions to reduce the computational complexity.
+						We will therefore make heavy use of incomplete Choleski decompositions to reduce the computational complexity from $\mathbf{O(m^2 n^3)}$ to $\mathbf{O(m^2 M^2 n)}$ with $\mathbf{M \ll n}$.
 					\end{myblock}\vfill
 		}\end{minipage}\end{beamercolorbox}
 	\end{column}
@@ -190,7 +190,7 @@
 							 \mathbb{I}_n \\ 0
 						 \end{pmatrix}\right)
 						\end{align*}
-						Given the cost of the gradient computations a natural extension is to perform conjugate gradient on the manifold, see \cite{Edelman1998} for the procedure.
+						Given the cost of the gradient computations a natural extension is to perform conjugate gradient on the manifold, see \cite{Edelman1998} for the procedure. Clever use of the block structure of $\tilde{\mathcal{K}}_\kappa $ gives an efficient $\mathbf {O(m^2)}$ algorithm to compute first order differences.
 					\end{myblock}\vfill
 					\begin{myblock}{Unmixing images}
 						\begin{figure}[H]
@@ -200,7 +200,7 @@
 						\end{figure}
 					\end{myblock}\vfill
 					\begin{myblock}{Independent images basis}
-						This time the quantity of interest is $W$ the unmixing matrix, $s$ representing the random coefficients in the ICA basis of natural images. In this setting the columns of $A$ form the basis and the columns of $W$ the detectors.
+						This time the quantity of interest is $W$, the unmixing matrix. $s$ representing the random coefficients in the ICA basis of natural images. In this setting the columns of $A$ form the basis and the columns of $W$ the detectors.
 						\begin{figure}[H]
 							\centering
 							\subfloat{\includegraphics[width=0.5\textwidth]{img/basis}}
