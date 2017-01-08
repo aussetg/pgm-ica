@@ -331,13 +331,10 @@ end
 
 Perform ICA using the KGV contrast function and using gradient descent
 """
-function kgv(X)
-  m, N = size(X)
+function kgv(x)
+  m, N = size(x)
   # For our intitial guess we use FastICA
-  w, _ = fastICA(X',m)
-  w = w'
-  #w = eye(m)
-  x = X
+  w, _ = fastICA(x,m)
   ε = 1e-5
   err = 1
   maxiter = 15
