@@ -9,17 +9,37 @@ function centeringt(X)
 end
 
 function whiten(X)
-  C = (X' * X)
+  (n,m) = size(X)
+  C = 1/n * (X' * X)
   U, S, V = svd(C)
-  D = S + 1e-7
+  D = S #+ 1e-7 # For statbility
   Ds = sparse(diagm(D.^(-0.5)))
   return (U * Ds * U' * X')', U, diagm(D)
 end
 
-function whitent(X)
-  C = (X * X')
+function whiten!(X)
+  (n,m) = size(X)
+  C = 1/n * (X' * X)
   U, S, V = svd(C)
-  D = S + 1e-7
+  D = S #+ 1e-7 # For statbility
   Ds = sparse(diagm(D.^(-0.5)))
-  return (U * Ds * U' * X)', U, diagm(D)
+  return (U * Ds * U' * X')'
+end
+
+function whitent(X)
+  (m,n) = size(X)
+  C = 1/n * (X * X')
+  U, S, V = svd(C)
+  D = S #+ 1e-7 # For statbility
+  Ds = sparse(diagm(D.^(-0.5)))
+  return (U * Ds * U' * X), U, diagm(D)
+end
+
+function whitent!(X)
+  (m,n) = size(X)
+  C = 1/n * (X * X')
+  U, S, V = svd(C)
+  D = S #+ 1e-7 # For statbility
+  Ds = sparse(diagm(D.^(-0.5)))
+  return (U * Ds * U' * X)
 end

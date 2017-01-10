@@ -25,12 +25,12 @@ xc , m = centeringt(x)
 Plots.scatter(xc[1,:],xc[2,:],leg=false,border=false, markersize=1)
 Plots.savefig("figures/x_c")
 
-xw, E , D = whiten(xc)
+xw = whiten!(xc)
 
 Plots.scatter(xw[1,:],xw[2,:],leg=false,border=false, markersize=1)
 Plots.savefig("figures/x_w")
 
-w, s_ica = fastICA(xw,2)
+w, s_ica = fastICA(xw, 2, 1000, 1e-5)
 
 Plots.scatter(s_ica[1,:],s_ica[2,:],leg=false,border=false, markersize=1)
 Plots.savefig("figures/s_retrieved")
