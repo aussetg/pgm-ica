@@ -3,11 +3,23 @@ include("preprocess.jl")
 include("FastICA.jl")
 
 """
+  gramCentering(G)
+
+Center in the feature space a gram matrix K given as K = G*G'.
+"""
+function gramCentering(G::Matrix{Float64})
+  N = size(G,1)
+  return G - repmat(mean(G,1),N,1)
+end
+
+"""
+  gramGauss(x::Vector{Float64}[, gamma = 2])
+
 Helper function to create the Gram matrix associated to a Gaussian symmetrix
 kernel and parameter sigma.
 """
-function gramGauss(x, gamma = 2)
-  N = size(x,1)
+function gramGauss(x::Vector{Float64}, gamma = 2)
+  N = length(x)
   K = eye(N)
   for i = 1:N
     for j = 1:(i-1)
@@ -18,31 +30,54 @@ function gramGauss(x, gamma = 2)
   # TODO: PAGE 11 SAYS WE NEED TO CENTER THE GRAM MATRIX !
   # TODO: DON'T FORGET TO DO IT
   N0 = eye(N) - 1/N * ones(N,N)
-  return N0*K*N0
+  # For some mysterious reasons, N0*K*N0 isn't symetric for Julia.
+  # Probably a numerical problem. So we fix that
+  K = N0*K*N0
+  K = 0.5*(K+K')
+  return K
 end
 
 """
-NOT YET IMPLEMENTED
-KCCA contrast function
+  gram(K::Function, x::Vector{Float64})
+
+Helper function to create the Gram matrix associated to a kernel K.
 """
-function kcca()
+function gram(K::Function, x::Vector{Float64})
+  N = length(x)
+  Km = eye(N)
+  for i = 1:N
+    for j = 1:(i-1)
+      Km[i,j] = K(x[i],x[j])
+      Km[j,i] = Km[i,j]
+    end
+  end
+  # TODO: PAGE 11 SAYS WE NEED TO CENTER THE GRAM MATRIX !
+  # TODO: DON'T FORGET TO DO IT
+  N0 = eye(N) - 1/N * ones(N,N)
+  # For some mysterious reasons, N0*K*N0 isn't symetric for Julia.
+  # Probably a numerical problem. So we fix that
+  K = N0*Km*N0
+  K = 0.5*(Km+Km')
+  return Km
 end
 
 """
+  regularize(x, N::Int[, k = 1e-3])
+
 Helper function to apply the regularization to the the matrix
 """
-function regularize(x,N::Int, k = 1e-3)
+function regularize(x, N::Int, k = 1e-3)
   return x/(x + 0.5*N*k)
 end
 
 """
-  updateJ(s,i,j)
+  updateJ(s, i, j, Rs, Us, Ms, C)
 
 This function comute a new contrast (only for KGV at the moment)
 using the fact that the Gram matrix only changes column wise for each
 partial derivative.
 """
-function updateJ(s,i,j,Rs,Us,Ms)
+function updateJ(s::Matrix{Float64}, i, j, Rs, Us, Ms, C)
   if (i>j)
     i, j = j, i
   end
@@ -77,26 +112,26 @@ function updateJ(s,i,j,Rs,Us,Ms)
       Rk[ix[j]:(ix[j]+Msp[j]-1),ix[i]:(ix[i]+Msp[i]-1)] = mat'
     end
   end
-  return -0.5*log(det(Rk))
+  return C(Rk)
 end
 
 """
-  finiteD(x,w[, ε])
+  finiteD(x,w, C[, ε])
 
 This function compute finite differences (only for KGV at the moment)
 using the fact that the Gram matrix only changes column wise for each
 partial derivative.
 """
-function finiteD(x, w , ε = 1e-3)
+function finiteD(x::Matrix{Float64}, w::Matrix{Float64}, C, ε = 1e-3)
   m, N = size(w)
   wd = zeros(m,N)
   s0 = w' * x
-  J0, Rs, Us, Ms = kgvc!(s0)
+  J0, Rs, Us, Ms = contrast!(s0, C)
   for i = 1:(m-1)
     for j = (i+1):m
       s = s0
       s[[i, j],:] = [cos(ε) sin(ε) ; sin(-ε) cos(ε)]*s[[i, j],:]
-      J = updateJ(s,i,j,Rs,Us,Ms)
+      J = updateJ(s, i, j, Rs, Us, Ms, C)
       wd[i,j] = (J-J0)/ε
       wd[j,i] = -(J-J0)/ε
     end
@@ -105,10 +140,10 @@ function finiteD(x, w , ε = 1e-3)
 end
 
 """
-  kgvc(X[, k])
+  contrast(X, C[, k])
 
 """
-function kgvc(X, k = 2*1e-3)
+function contrast(X::Matrix{Float64}, C, k = 2*1e-3)
   m, N = size(X) # Components, Observations
   Ms = zeros(Int,m)
   Rs = Array{Array}(m) # The R matrices
@@ -135,15 +170,15 @@ function kgvc(X, k = 2*1e-3)
       Rk[ix[j]:(ix[j]+Ms[j]-1),ix[i]:(ix[i]+Ms[i]-1)] = mat'
     end
   end
-  return -0.5*log(det(Rk))
+  return C(Rk)
 end
 
 """
-  kgvc!(X[, k])
+  contrast!(X, C[, k])
 
 Same as kgvc except returns additional informations needed to rebuild Rk
 """
-function kgvc!(X, k = 2*1e-3)
+function contrast!(X::Matrix{Float64}, C, k = 2*1e-3)
   m, N = size(X) # Components, Observations
   Ms = zeros(Int,m)
   Rs = Array{Array}(m) # The R matrices
@@ -170,7 +205,7 @@ function kgvc!(X, k = 2*1e-3)
       Rk[ix[j]:(ix[j]+Ms[j]-1),ix[i]:(ix[i]+Ms[i]-1)] = mat'
     end
   end
-  return -0.5*log(det(Rk)), Rs, Us, Ms
+  return C(Rk), Rs, Us, Ms
 end
 
 """
@@ -183,7 +218,7 @@ The Geometry of Algorithms with Orthogonality Constraints.
 SIAM Journal on Matrix Analysis and Applications, 20(2), 303–353.
 https://doi.org/10.1137/S0895479895290954
 """
-function geod(w,h,t)
+function geod(w::Matrix{Float64}, h::Matrix{Float64}, t)
   A=w'*h
   A=0.5*(A-A')
   MN=expm(t*A)
@@ -192,24 +227,24 @@ function geod(w,h,t)
 end
 
 """
-  initializeSearch(w, d, x, a, b, Ja)
+  initializeSearch(w, d, x, a, b, Ja, C)
 
 Find inital conditions for the linesearch.
 """
-function initializeSearch(w, d, x, a, b, Ja)
+function initializeSearch(w::Matrix{Float64}, d, x, a, b, Ja, C)
   φ = 1.618
   ε = 1e-10
   wp, hp = geod(w,d,a)
-  fa = kgvc(wp' * x)
+  fa = contrast(wp' * x, K)
   wp, hp = geod(w,d,b)
-  fb = kgvc(wp' * x)
+  fb = contrast(wp' * x, C)
   if (fb > fa)
      a, b = b, a
      fa, fb = fb, fa
   end
   c = b + φ * (b-a)
   wp, hp = geod(w,d,c)
-  fc = kgvc(wp' * x)
+  fc = contrast(wp' * x, C)
 
   while (fb > fc)
    r = (b-a)*(fb-fc);
@@ -218,7 +253,7 @@ function initializeSearch(w, d, x, a, b, Ja)
    ulim = b+100*(c-b)
    if ((b-u)*(u-c) > 0)
       wp, hp = geod(w,d,u)
-      fu = kgvc(wp'*x)
+      fu = contrast(wp'*x, C)
 
       if (fu < fc)
          a = b
@@ -235,11 +270,11 @@ function initializeSearch(w, d, x, a, b, Ja)
       end
       u = c + 100*(c-b)
       wp, hp = geod(w,d,u)
-      fu = kgvc(wp'*x)
+      fu = contrast(wp'*x, C)
    else
       if ((c-u)*(u-ulim) > 0)
          wp, hp = geod(w,d,u)
-         fu = kgvc(wp'*x)
+         fu = contrast(wp'*x, C)
          if (fu < fc)
             b = c
             c = u
@@ -248,19 +283,19 @@ function initializeSearch(w, d, x, a, b, Ja)
             fb = fc
             fc = fu
             wp, hp = geod(w,d,u)
-            fu = kgvc(wp'*x)
+            fu = contrast(wp'*x, C)
          end
       else
          if ((u-ulim)*(ulim-c) >= 0)
 
             u = ulim
             wp, hp = geod(w,d,u)
-            fu = kgvc(wp'*x)
+            fu = contrast(wp'*x, C)
 
          else
             u = c + 100*(c-b)
             wp, hp = geod(w,d,u)
-            fu = kgvc(wp'*x)
+            fu = contrast(wp'*x, C)
          end
       end
    end
@@ -271,13 +306,13 @@ return a,b,c,fa,fb,fc
 end
 
 """
-  linesearch(w,d,x,a,b,c)
+  linesearch(w, d, x, a, b, c, C[, tol = 1e-2])
 
 Perform a linesearch by golden section.
 Not exactly a linesearch per se, but equivalent on a geodesic of the
 Stiefel manifold.
 """
-function linesearch(w,d,x,a,b,c, tol = 1e-2)
+function linesearch(w::Matrix{Float64}, d, x, a, b, c, C, tol = 1e-2)
   φ = 1.618
   C = 0.382
   R = 0.618
@@ -293,10 +328,10 @@ function linesearch(w,d,x,a,b,c, tol = 1e-2)
     x2 = b
     x1 = b - C*(b-a)
   end
-  wp, hp = geod(w,d,x1)
-  f1 = kgvc(wp'*x)
-  wp, hp = geod(w,d,x2)
-  f2 = kgvc(wp'*x)
+  wp, hp = geod(w, d, x1)
+  f1 = contrast(wp'*x, C)
+  wp, hp = geod(w, d, x2)
+  f2 = contrast(wp'*x, C)
   k = 1
   while ((abs(x3-x0) > tol) & (k<maxiter))
     if f2 < f1
@@ -305,14 +340,14 @@ function linesearch(w,d,x,a,b,c, tol = 1e-2)
       x2 = R*x1 + C*x3
       f1 = f2
       wp, hp = geod(w,d,x2)
-      f2 = kgvc(wp'*x)
+      f2 = contrast(wp'*x, C)
     else
       x3 = x2
       x2 = x1
       x1 = R*x2 + C*x0
       f2 = f1
-      wp, hp = geod(w,d,x1)
-      f1 = kgvc(wp'*x)
+      wp, hp = geod(w, d, x1)
+      f1 = contrast(wp'*x, C)
     end
     k = k+1;
   end
@@ -327,11 +362,11 @@ function linesearch(w,d,x,a,b,c, tol = 1e-2)
 end
 
 """
-  kgv(X)
+  kica(X, C)
 
-Perform ICA using the KGV contrast function and using gradient descent
+Perform ICA using the contrast function C and using steepest descent.
 """
-function kgv(x)
+function kica(x::Matrix{Float64}, C::Function)
   m, N = size(x)
   # For our intitial guess we use FastICA
   w, _ = fastICA(x,m)
@@ -341,20 +376,38 @@ function kgv(x)
   iters = 0
   b = 1
   while (err > ε) && iters < maxiter
-    J, grad = finiteD(x,w)
+    J, grad = finiteD(x, w, C)
     d = grad
 
     gap = sqrt(0.5*trace(grad'*grad))
 
     ## Initialize interval
-    a,b,c,fa,fb,fc = initializeSearch(w,d,x,0,b,J)
+    a,b,c,fa,fb,fc = initializeSearch(w, d, x, 0, b, J, C)
     tol=max(abs(ε/gap), abs(mean([a, b, c])/10))
     ## Search on the interval
-    b, Jmin = linesearch(w,d,x,a,b,c,tol)
+    b, Jmin = linesearch(w, d, x, a, b, c, tol, C)
     w, h = geod(w,d,b)
     err = abs(Jmin/J - 1)
     iters = iters + 1
     J = Jmin
   end
   return w, w'*xw
+end
+
+"""
+  kgv(Rk)
+
+Compute the KGV contrast function from the Rk matrix
+"""
+function kgv(Rk)
+  return -0.5*logdet(Rk)
+end
+
+"""
+  kcca(Rk)
+
+Compute the KCCA contrast function from the Rk matrix
+"""
+function kcca(Rk)
+  return -0.5*log(eigmin(Rk))
 end
