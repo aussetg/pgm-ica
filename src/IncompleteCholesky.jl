@@ -58,6 +58,7 @@ function IncompleteChol(K::Function, x::Vector{Float64}, kappa = 2*1e-3)
   Kp = spzeros(N,N)
   P = speye(Float64,N)
   G = speye(Float64,N)
+  computed = zeros(Int8,N) # On va garder en mémoire les colonnes déja calculées
   for k = 1:N
     G[k,k] = K(x[k],x[k])
   end
@@ -69,12 +70,20 @@ function IncompleteChol(K::Function, x::Vector{Float64}, kappa = 2*1e-3)
     # Construit les éléments dont on va avoir besoin
     # TODO: Faut t'il verifier si il existent deja avant de les recalculer et
     # TODO: potentiellement les ecraser ?
-    for k = 1:N
-      Kp[k,i] = (Kp[k,i] == 0 ? K(x[k],x[i]) : Kp[k,i])
-      Kp[i,k] = Kp[k,i]
-      Kp[k,j] = (Kp[k,j] == 0 ? K(x[k],x[j]) : Kp[k,j])
-      Kp[j,k] = Kp[k,j]
+    if computed[i] == 0
+      for k = 1:N
+        Kp[k,i] = K(x[k],x[i])
+        Kp[i,k] = Kp[k,i]
+      end
     end
+    computed[i] = 1
+    if computed[j] == 0
+      for k = 1:N
+        Kp[k,j] = K(x[k],x[j])
+        Kp[j,k] = Kp[k,j]
+      end
+    end
+    computed[j] = 1
     # Permute elements i and j in Kp
     Kp[:,i], Kp[:,j] = Kp[:,j], Kp[:,i] # En fait on peut utiliser Kp[:,[j,i]]
     Kp[i,:], Kp[j,:] = Kp[j,:], Kp[i,:]
