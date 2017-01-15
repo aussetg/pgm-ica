@@ -12,6 +12,7 @@
 \usepackage{float}
 \usepackage{subfig}
 \bibliography{Biblio}
+\usepackage{minted}
 \usepackage[backend=biber,hyperref=true,backref=true,style=verbose-ibid,maxcitenames=3]{biblatex}
 \usepackage{scrlayer-scrpage}
 \pagestyle{scrheadings}
@@ -77,22 +78,308 @@
 \begin{document}
 \input{title}
 
+\tableofcontents
+
 \chapter{The ICA framework}
 
-In the physical world it is rare for the quantity of interest and the quantity measured to perfectly match. Scientists are are used to dealing with measurements mixed with random noise but this is only one way information may be unavailable.
-A very common situation is when our signal of interest, that we will from now on call $s \in \mathcal{R}^{m \times n}$ is actually mixed with itself. To try to recover our signal $s$ we will set up a certain number of recording device, generally $n$ and from our recorded signals try to recover the sources. If we assume the sources are linearly mixed our problem is then:
+In the physical world it is rare for the quantity of interest and the quantity measured to perfectly match. Scientists are used to dealing with measurements mixed with random noise but this is only one way information may be unavailable.
+A very common situation is when our signal of interest, that we will from now on call $s \in \mathcal{R}^{m \times n}$ is actually mixed with itself. To try to recover our signal $s$ we will set up a certain number of recording devices, generally $n$ and from our recorded signals try to recover the sources. If we assume the sources are linearly mixed our problem is then:
 
 \begin{align*}
 	x = A s
 \end{align*}
 
-where $x \in \mathcal{R}^{k \times n}$, $A \in \mathcal{R}^{k \times m}$. While it is not necessarily the case or even needed from now on we will assume $k = m$ so that the number of recorded signals equals the number of sources, the problem is then well posed.
+where $x \in \mathcal{R}^{k \times n}$, $A \in \mathcal{R}^{k \times m}$. While it is not necessarily the case or even needed from now on, we will assume $k = m$ so that the number of recorded signals equals the number of sources, the problem is then well posed.
 
 If we somehow knew $A$ the mixing matrix then this problem would be easy to solve and one would only need to solve $s = A^{-1} x$, but in general it's impossible to obtain the matrix $A$ and the problem seems intractable, the number of unknowns dwarfing the number of known quantities.
 
-We will see that in fact and quite suprisingly the sole hypothesis of the independence of the components of $s$ is enough to find a solution to the problem. Because of the way the problem is posed one cannot hope to recover the real $s$ as for example a scaling or permutation of $A$ leaves the problem unchanged and we therefore cannot hope to recover the magnitudes (and therefore signs) of the $s_i$ or their order.
+We will see that in fact and quite surprisingly the sole hypothesis of the independence of the components of $s$ is enough to find a solution to the problem. 
 
-\tableofcontents
+There are, however, some limitations: because of the way the problem is posed one cannot hope to recover the real $s$ as for example a scaling or permutation of $A$ leaves the problem unchanged and we therefore cannot hope to recover the magnitudes (and therefore signs) of the $s_i$ or their order. We will also not be able to recover signals if more than $1$ is Gaussian.
+
+\chapter{Preprocessing}
+
+Before proceeding with the rest, we will quickly give two important preprocessing steps. 
+
+This preprocessing has two important functions: it greatly simplifies the theory at no additional cost, and it while reduce the computational complexity.
+
+\section{Centering}
+
+The first step is to centre the $x$ such that $\mathbb{E} \left[ x \right] = 0$, we therefore just have to form $\tilde{x} = x -\mathbb{E} \left[ x \right]$.
+
+This preprocessing greatly simplify the formulas and theory and have the advantage of not adding any constraint: once $W$ is found we only have to add back $W \mathbb{E} \left[ x \right]$ to the $s$ found.
+
+\section{Whitening}\label{whitening}
+
+ICA can be seen a generalization of PCA: while PCA gives uncorrelated components, ICA gives independent components. One implication of this fact is that an ICA solution is necessarily a PCA solution. It is therefore a good idea to first \emph{whiten} the data, i.e. diagonalize its covariance matrix before treating it with ICA.
+
+The whitening process can be performed efficiently using the semi-definite positiveness of the covariance matrix by forming its eigenvalue decomposition:
+
+\begin{align*}
+	\mathbb{E} \left[ x x^\intercal \right] = U D U^\intercal
+\end{align*}
+
+Therefore if we note $P = U D^{-\frac{1}{2}} U^\intercal$ where $D^{-\frac{1}{2}}$ can be very efficiently computed we have with $\tilde{x} = P x$
+
+\begin{align*}
+	\mathbb{E} \left[ x x^\intercal \right] = \mathbb{I}
+\end{align*}
+
+Computationally, this transformation has the advantage of making $W$ orthogonal, the parameters to estimate are therefore reduced from $n^2$ to $\frac{n (n-1)}{2}$. The new constraint "$W W^\intercal$" also forces $W$ to lie on the Stiefel Manifold, giving very efficient optimization techniques.
+
+\chapter{Measuring independence}
+
+It is possible to treat the problem as a parametric one and to fix a certain form for the distributions but that case is quite limiting. We while therefore work in a semi-parametric framework with parameter $W$ the unmixing matrix:
+
+\begin{align*}
+	s = W y
+\end{align*}
+
+In the case $m = k$ we then have $W = A^{-1}$. It is natural to study $W$ directly as it is our parameter of interest and we will see that the problem is more easily expressed in terms of $W$.
+
+We will suppose here that $m = k$ and $A$ is invertible to make this paragraph easier.
+
+Given our semi-parametric formulation we want to find the maximum likelihood estimate of $A$. We will note $p^\star (x)$ the unknown ground truth of $x$ and $p(x)$ the model. Our problem is then:
+
+\begin{align*}
+	\text{minimize } D \left(p^\star(x) \mid \mid p(x) \right)
+\end{align*}
+
+We know that the KL divergence is invariant under an invertible transformation therefore the problem is equivalent to:
+
+\begin{align*}
+	\text{minimize } D \left(p^\star(s) \mid \mid p(s) \right)
+\end{align*}
+
+if we use the relation $x = A s$.
+
+We also have the following relation:
+
+\begin{align*}
+	D(p^\star(s) \mid \mid p(s)) = D(p^\star(s) \mid \mid \tilde{p}(s)) + D( \tilde{p}(s) \mid \mid p(s))
+\end{align*}
+
+with $\tilde{p}(s)$ the product of the marginal densities of $p^\star(s)$ i.e. the density if the components were independent.
+
+The minimum is then obtained for $p^\star(s) = \tilde{p}(s)$ and the problem is:
+
+\begin{align*}
+	\text{minimize } D \left(p^\star(x) \mid \mid \tilde{p}(s) \right)
+\end{align*}
+
+We want to minimize the \emph{mutual information between the components of $s$}.
+
+A natural objective to optimize would therefore be the empirical mutual information of $s = W x$ but the empirical mutual information is complicated to compute, to make the problem tractable two different approaches are possible:
+
+\begin{enumerate}
+	\item Optimize an approximation of the mutual information.
+	\item Optimize a \emph{contrast function} $J$, i.e a function with the same properties as the mutual information: $J(s) \geq 0, \forall s$ and $J(s) = 0$ iff the components of $s$ are independent.
+\end{enumerate}
+
+Fast-ICA will use the first approach while Kernel-ICA will use the second approach.
+
+\chapter{A quick reminder of Fast-ICA}
+
+We will use Fast-ICA as our reference algorithms as well as the method we will use to initialize our Kernel-ICA procedure. We therefore give a quick overview of the Fast-ICA algorithm.
+
+Fast-ICA maximizes an approximation of the negentropy $J(s) = H(s_\text{gauss}) − H(s)$ which is equivalent to the minimizing the mutual information up to a constant.
+
+Of course forming the empirical negentropy is equivalent to forming the empirical mutual information and the problem is therefore intractable. The approach taken is therefore to approximate the negentropy using non-linear functions.
+
+In the case of non-quadratic function $G$ \cite{Hyvarinen1998} proves that 
+
+\begin{align*}
+	J(s) \propto \left( \mathbb{E} \left[G(s) \right] − \mathbb{E} \left[ G(\nu) \right] \right)^2
+\end{align*}
+
+where $\nu \sim \mathcal{N}(0,1)$.
+
+Two good (optimal in some sense) choices for $G$ are:
+
+\begin{align*}
+	&G_1 (u) = \log \cosh (a u) \\
+	&G_2 (u) = −e^{-\frac{u^2}{2}}
+\end{align*}
+
+Fast-ICA is then a relatively simple fixed point algorithm obtained from the newton steps.
+
+By only working with matrix operations all computations can be done in-place and using a \texttt{BLAS}, making Fast-ICA extremely efficient.
+
+\chapter{Kernel-ICA}
+
+\section{Kernel contrast function}
+
+We want to optimize a measure of independence of our estimated sources. Most approaches try to optimize an approximation of the mutual information. The measure chosen here by \cite{Bach2002} is for two variables:
+
+\begin{align*}
+	\rho_\mathcal{F} = \max_{f_1, f_2 \in \mathcal{F}} \corr (f_1(x_1), f_2 (x_2))
+\end{align*}
+
+We see that it is indeed a contrast function: it is always greater than $0$ and equal to $0$ iff the variables are independent if the family $\mathcal{F}$ is \emph{large enough} (if it includes Gaussian densities for example).
+
+By exploiting the kernel trick we can obtain
+
+\begin{align*}
+	\rho_\mathcal{F} = \max_{f_1, f_2 \in \mathcal{F}} \corr ( \langle \Phi_1 (x_1), f_1 \rangle , \langle \Phi_2 (x_2), f_2 \rangle)
+\end{align*}
+
+We recognize a CCA problem and if we note $K_1$ and $K_2$ respective Gram matrices (assuming they are centred) we get the problem:
+
+\begin{align*}
+	\begin{pmatrix}
+		0 & K_1 K_2 \\
+		K_2 K_1 & 0
+	\end{pmatrix} \begin{pmatrix}
+		\alpha_1 \\ \alpha_2
+	\end{pmatrix}
+	= \rho \begin{pmatrix}
+		K_1^2 & 0 \\
+		0 & K_2^2
+	\end{pmatrix} \begin{pmatrix}
+		\alpha_1 \\ \alpha_2
+	\end{pmatrix}
+\end{align*}
+
+This problem is unfortunately not well posed and will always be equal to $1$ for most kernels, we therefore adopt a regularized version as an estimator:
+
+\begin{align*}
+	\rho_\mathcal{F} = \max_{f_1, f_2 \in \mathcal{F}} \frac{\cov (f_1(x_1), f_2 (x_2))}{(\var f_1 (x_1) + \kappa \lVert f_1 \rVert^2 _\mathcal{F} )^{1/2} (\var f_2 (x_2) + \kappa \lVert f_2 \rVert^2 _\mathcal{F} )^{1/2}}
+\end{align*}
+
+The problem estimated at the first order is then:
+
+\begin{align*}
+	\begin{pmatrix}
+		0 & K_1 K_2 \\
+		K_2 K_1 & 0
+	\end{pmatrix} \begin{pmatrix}
+		\alpha_1 \\ \alpha_2
+	\end{pmatrix}
+	= \rho \begin{pmatrix}
+		(K_1+\frac{N \kappa}{2} \mathbb{I})^2 & 0 \\
+		0 & (K_2+\frac{N \kappa}{2} \mathbb{I})^2
+	\end{pmatrix} \begin{pmatrix}
+		\alpha_1 \\ \alpha_2
+	\end{pmatrix}
+\end{align*}
+
+Of course we are interested in solving the $m$-variables problems, we can easily extend CCA to $m$ variables.
+
+\begin{align*}
+	&\begin{pmatrix}
+		0 & K_1 K_2  & \cdots & K_1 K_m\\
+		K_2 K_1 & 0 & \cdots & K_2 K_m \\
+		\vdots & \vdots & \ddots & \vdots \\
+		K_m K_1 & K_m K_2 & \cdots & 0
+	\end{pmatrix} \begin{pmatrix}
+		\alpha_1 \\ \alpha_2 \\ \vdots \\ \alpha_m
+	\end{pmatrix} = \rho \begin{pmatrix}
+		(K_1+\frac{N \kappa}{2} \mathbb{I})^2 & 0  & \cdots & 0\\
+		0 & (K_2+\frac{N \kappa}{2} \mathbb{I})^2 & \cdots & 0 \\
+		\vdots & \vdots & \ddots & \vdots \\
+		0 & 0 & \cdots & (K_m+\frac{N \kappa}{2} \mathbb{I})^2
+	\end{pmatrix} \begin{pmatrix}
+		\alpha_1 \\ \alpha_2 \\ \vdots \\ \alpha_m
+	\end{pmatrix}
+\end{align*}
+
+We can then transform that problem in the problem of finding the eigenvalues of:
+						
+\begin{align*}
+	&\tilde{\mathcal{K}}_\kappa = \begin{pmatrix}
+		\mathbb{I} & r_\kappa (K_1)  r_\kappa (K_2)  & \cdots &  r_\kappa (K_1) r_\kappa (K_m)\\
+		r_\kappa (K_2)  r_\kappa (K_1) & \mathbb{I} & \cdots & r_\kappa (K_2) r_\kappa (K_m) \\
+		\vdots & \vdots & \ddots & \vdots \\
+		r_\kappa (K_m)  r_\kappa (K_1) & r_\kappa (K_m) r_\kappa (K_2) & \cdots & \mathbb{I}
+	\end{pmatrix} \\
+	& r_\kappa (K_i) = K_i (K_i + \frac{N \kappa}{2} \mathbb{I})^{-1}
+\end{align*}
+
+We then optimize:
+
+\begin{align*}
+	J(W) = -\frac{1}{2} \log C \left( \tilde{\mathcal{K}}_\kappa \right)
+\end{align*}
+
+With $C(U) = \det U$ for the KGV contrast function or $C(U) = \lambda_\text{min} (U)$ for KCCA. Both have strong links with the mutual information.
+
+\section{Reducing complexity}
+
+In practice the previous computation is intractable because of the dimensions involved and even forming the Gram matrices is impossible. We will therefore use the fact that the Gram matrices are semi-definite positive and use an incomplete Choleski decomposition to find a low rank approximation of the matrices involved.
+
+If we decompose the $K_i$ as
+\begin{align*}
+	K_i = G_i G_i^\intercal = U_i \Lambda_i U_i^\intercal
+\end{align*}
+
+with $\Lambda_i$ diagonal then if $R_i$ is $\Lambda_i$ regularized by $\lambda \to \frac{\lambda}{\lambda + N \kappa / 2}$ we have
+
+\begin{align*}
+	\tilde{\mathcal{K}}_\kappa = (\mathcal{U} \mathcal{V}) \begin{pmatrix}
+		\mathcal{R}_\kappa & 0 \\
+		0 & \mathbb{I}
+	\end{pmatrix} (\mathcal{U} \mathcal{V})^\intercal
+\end{align*}
+
+with
+
+\begin{align*}
+	\mathcal{R}_\kappa =  \begin{pmatrix}
+		\mathbb{I} & R_1 U_1^\intercal U_2 R_2  & \cdots &  R_1 U_1^\intercal U_m R_m \\
+		R_2 U_2^\intercal U_1 R_1 & \mathbb{I} & \cdots & R_2 U_2^\intercal U_m R_m \\
+		\vdots & \vdots & \ddots & \vdots \\
+		R_m U_m^\intercal U_1 R_1 & R_m U_m^\intercal U_2 R_2 & \cdots & \mathbb{I} \\
+	\end{pmatrix}
+\end{align*}
+
+And therefore
+
+\begin{align*}
+	\det \tilde{\mathcal{K}}_\kappa = \det \mathcal{R}_\kappa
+\end{align*}
+
+We have therefore reduced the computational complexity from $\mathbf{O(m^2 n^3)}$ to $\mathbf{O(m^2 M^2 n)}$ with $\mathbf{M \ll n}$.
+
+\section{Optimization on a manifold}
+
+As seen in \ref{whitening}, the whitening constrained our problem to:
+
+\begin{align*}
+	&\min_W J(W) \\
+	\text{s.t } &W W^\intercal = \mathbb{I}
+\end{align*}
+
+The set $\{ W \mid W W^\intercal = \mathbb{I} \}$ has a particular geometry: it is Riemannian manifolds and most common optimization procedures can be performed on it \cite{Edelman1998}.
+
+The simplest implementation is steepest descent along geodesics in the direction of the gradient using the following: if $W, H \in \mathcal{R}^{m \times n}$ s.t $W^\intercal W = \mathbb{I}$ and $A = W^\intercal H$ skew-symmetric then the geodesic on the Stiefel manifold emanating from $W$ in direction $H$ is given by the curve
+
+\begin{align*}
+	& &W (t) = W M (t) + Q N (t) \\
+	&\text{where} & QR = (\mathbb{I} - W W^\intercal) H \\
+	&\text{and} &\begin{pmatrix}
+		M(t) \\ N(t)
+	\end{pmatrix} = \exp \left( t \begin{pmatrix}
+		A & - R^\intercal \\
+		R & 0
+	\end{pmatrix} \right) \begin{pmatrix}
+		\mathbb{I}_n \\ 0
+	\end{pmatrix}
+\end{align*}
+						
+Given the cost of the gradient computations a natural extension is to perform conjugate gradient on the manifold, see \cite{Edelman1998} for the procedure. Unfortunately because of the complexity of the implementation I only used steepest descent along a geodesic, as in \cite{Bach2002}. We also note that clever use of the block structure of $\tilde{\mathcal{K}}_\kappa $ gives an efficient $\mathbf {O(m^2)}$ algorithm to compute first order differences and that \cite{Bach2002} provides a closed form of the gradient in the cases of polynomials and Gaussian kernels. I chose to only use finite differences because of their generality.
+
+
+\section{Possible improvements}
+
+\chapter{Experimental results}
+
+\section{Unmixing Images}
+
+\section{Finding a natural basis of images}
+
+\section{Measuring performance on known distributions}
+
+\appendix
 
 \listoftodos
 
