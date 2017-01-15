@@ -69,7 +69,7 @@
 						\begin{align*}
 							\rho_\mathcal{F} = \max_{f_1, f_2 \in \mathcal{F}} \corr ( \langle \Phi_1 (x_1), f_1 \rangle , \langle \Phi_2 (x_2), f_2 \rangle)
 						\end{align*}
-						We recognize a CCA problem and if we note $K_1$ and $K_2$ the respective Gram matrices (assuming they are centred) we get the problem:
+						We recognize a CCA problem and if we note $K_1$ and $K_2$ the respective Gram matrices (assuming they are centered) we get the problem:
 						\begin{align*}
 							\begin{pmatrix}
 								0 & K_1 K_2 \\
@@ -84,7 +84,7 @@
 								\alpha_1 \\ \alpha_2
 							\end{pmatrix}
 						\end{align*}
-						This problem is unfortunately not well posed and will always be equal to $0$ for most kernels, we therefore adopt a regularized version as an estimator:
+						This problem is unfortunately not well posed and will always be equal to $1$ for most kernels, we therefore adopt a regularized version as an estimator:
 						\begin{align*}
 							\rho_\mathcal{F} = \max_{f_1, f_2 \in \mathcal{F}} \frac{\cov (f_1(x_1), f_2 (x_2))}{(\var f_1 (x_1) + \kappa \lVert f_1 \rVert^2 _\mathcal{F} )^{1/2} (\var f_2 (x_2) + \kappa \lVert f_2 \rVert^2 _\mathcal{F} )^{1/2}}
 						\end{align*}
@@ -134,7 +134,7 @@
 						\end{align*}
 						We then optimize:
 						\begin{align*}
-							J(W) = -\frac{1}{2} \det \tilde{\mathcal{K}}_\kappa
+							J(W) = -\frac{1}{2} \log \det \tilde{\mathcal{K}}_\kappa
 						\end{align*}
 					\end{myblock}\vfill
 					\begin{myblock}{Reducing Complexity}
@@ -186,9 +186,9 @@
 						 \end{pmatrix} = \exp \left( t \begin{pmatrix}
 							 A & - R^\intercal \\
 							 R & 0
-							\end{pmatrix} \begin{pmatrix}
+							\end{pmatrix} \right) \begin{pmatrix}
 							 \mathbb{I}_n \\ 0
-						 \end{pmatrix}\right)
+						 \end{pmatrix}
 						\end{align*}
 						Given the cost of the gradient computations a natural extension is to perform conjugate gradient on the manifold, see \cite{Edelman1998} for the procedure. Clever use of the block structure of $\tilde{\mathcal{K}}_\kappa $ gives an efficient $\mathbf {O(m^2)}$ algorithm to compute first order differences.
 					\end{myblock}\vfill
