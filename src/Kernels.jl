@@ -1,9 +1,9 @@
 """
-  gauss(x, y[, gamma = 2])
+  gaussian(x, y[, gamma = 2])
 
 Gaussian Kernel (RBF) in 1-dimension.
 """
-function gaussian(x::Float64, y::Float64, gamma = 2)
+@fastmath function gaussian(x::Float64, y::Float64, gamma = 2)
   return exp(-gamma*(x-y)^2)
 end
 
@@ -12,7 +12,7 @@ end
 
 Gaussian Kernel (RBF) in 1-dimension.
 """
-function gauss(x::Float64, y::Float64, gamma = 2)
+@fastmath function laplace(x::Float64, y::Float64, gamma = 2)
   return exp(-gamma*abs(x-y))
 end
 
@@ -21,6 +21,6 @@ end
 
 Gaussian Kernel (RBF) in 1-dimension.
 """
-function polynomial(x::Float64, y::Float64, d = 2)
+@fastmath function polynomial(x::Float64, y::Float64, d = 2, c = 1)
   return (c+x*y)^d
 end

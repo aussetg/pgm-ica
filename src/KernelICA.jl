@@ -10,7 +10,7 @@ Center in the feature space a gram matrix K given as K = G*G'.
 """
 function gramCentering(G::Matrix{Float64})
   N = size(G,1)
-  return G - repmat(mean(G,1),N,1)
+  G -= repmat(mean(G,1),N,1)
 end
 
 """
@@ -62,22 +62,16 @@ function updateJ(s::Matrix{Float64}, i, j, Rs, Us, Ms, C::Function, K::Function)
   Usp = Us
   m, N = size(s)
   # First we will compute the updated values for i and j
-  Pi, Gi, Mi = IncompleteChol(K, s[i,:])
-  Gi = gramCentering(Gi)
-  Msp[i] = Mi
-  Pj, Gj, Mj = IncompleteChol(K, s[j,:])
-  Gj = gramCentering(Gj)
-  Msp[j] = Mj
-  Ui, Si, Vi = svd(Gi)
-  Usp[i] = Ui
-  Li = sparse(diagm(Si.^2))
-  Ri = regularize.(Li,N)
-  Rsp[i] = Ri
-  Uj, Sj, Vj = svd(Gj)
-  Usp[j] = Uj
-  Lj = sparse(diagm(Sj.^2))
-  Rj = regularize.(Lj,N)
-  Rsp[j] = Rj
+  for k = [i, j]
+    Pk, Gk, Mk = IncompleteChol(K, s[k,:])
+    gramCentering(Gk)
+    Msp[k] = Mk
+    Uk, Sk, Vk = svd(Gk)
+    Usp[k] = Uk
+    Lk = sparse(diagm(Sk.^2))
+    Rk = regularize.(Lk,N)
+    Rsp[k] = Rk
+  end
   # Now we will build Rk
   Rk = eye(sum(Msp))
   ix = cumsum(Msp) - Msp + 1
@@ -128,7 +122,7 @@ function contrast(X::Matrix{Float64}, C::Function, K::Function, k = 2*1e-3)
     # TODO: PAGE 11 SAYS WE NEED TO CENTER THE GRAM MATRIX !
     # TODO: DON'T FORGET TO DO IT
     P, G, M = IncompleteChol(K, X[i,:])
-    G = gramCentering(G)
+    gramCentering(G)
     U,S,V = svd(G)
     L = sparse(diagm(S.^2))
     R = regularize.(L,N,k)
@@ -163,7 +157,7 @@ function contrast!(X::Matrix{Float64}, C::Function, K::Function, k = 2*1e-3)
     # TODO: PAGE 11 SAYS WE NEED TO CENTER THE GRAM MATRIX !
     # TODO: DON'T FORGET TO DO IT
     P, G, M = IncompleteChol(K, X[i,:])
-    G = gramCentering(G)
+    gramCentering(G)
     U,S,V = svd(G)
     L = sparse(diagm(S.^2))
     R = regularize.(L,N,k)
@@ -344,14 +338,12 @@ Perform ICA using the contrast function C and using steepest descent.
 The contrast is computed with respect to the kernel K of signature:
 K :: Float -> Float -> Float
 """
-function kica(x::Matrix{Float64}, C::Function = kgv, K::Function = gaussian)
+function kica(x::Matrix{Float64}; C::Function = kgv, K::Function = gaussian, maxiter = 15, ε = 1e-5)
   m, N = size(x)
   # For our intitial guess we use FastICA
   w, _ = fastICA(x,m)
   w = w'
-  ε = 1e-5
   err = 1
-  maxiter = 15
   iters = 0
   b = 1
   while (err > ε) && iters < maxiter

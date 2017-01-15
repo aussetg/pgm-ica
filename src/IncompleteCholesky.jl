@@ -8,7 +8,7 @@ and M the rank of the approximation such that:
 |P*K*P' - G*G'| < eta
 See page 20.
 """
-function IncompleteChol(K::Matrix{Float64}, kappa = 2*1e-3)
+@fastmath function IncompleteChol(K::Matrix{Float64}, kappa = 2*1e-3)
   # let's chose eta = 10-3 Nk / 2 as in the paper
   N = size(K,1)
   eta = 1e-3 * 0.5*N*kappa
@@ -50,7 +50,7 @@ and M the rank of the approximation such that:
 |P*K*P' - G*G'| < eta
 See page 20.
 """
-function IncompleteChol(K::Function, x::Vector{Float64}, kappa = 2*1e-3)
+@fastmath function IncompleteChol(K::Function, x::Vector{Float64}, kappa = 2*1e-3)
   # let's chose eta = 10-3 Nk / 2 as in the paper
   N = length(x)
   eta = 1e-3 * 0.5*N*kappa

@@ -7,13 +7,13 @@ function randO(m,n)
   return w[1:m,1:n]
 end
 
-function symDecorrel(w::Matrix{Float64})
+@fastmath function symDecorrel(w::Matrix{Float64})
   K = w'*w
   D, V = eig(K)
   return w * V*diagm(D.^(-0.5))*V'
 end
 
-function fastICA(X::Matrix{Float64}, c, nrounds = 1000, epsilon = 1e-4)
+@fastmath function fastICA(X::Matrix{Float64}, c, nrounds = 1000, epsilon = 1e-4)
   # m x n = Dimensions x Samples
   # c = # of Sources
   (m,n) = size(X)
@@ -24,9 +24,9 @@ function fastICA(X::Matrix{Float64}, c, nrounds = 1000, epsilon = 1e-4)
   while iters < nrounds && error > epsilon
     wold = w
     wx = w * X
-    gwx = tanh(wx)
-    gwxp = ones(c,n) - gwx.^2
-    w = gwx * X' - diagm(gwxp * ones(n)) * w
+    @simd gwx = tanh(wx)
+    @simd gwxp = ones(c,n) - gwx.^2
+    @simd w = gwx * X' - diagm(gwxp * ones(n)) * w
     # Symetric decorelation
     w = symDecorrel(w)
     error = 1 - minimum(abs(diag(w*wold')))
