@@ -6,6 +6,7 @@ If eta is not provided eta = 1e-2 is used.
 Return P the permutation matrix, G a lower triangular matrix
 and M the rank of the approximation such that:
 |P*K*P' - G*G'| < eta
+P is given as reordering vector.
 See page 20.
 """
 @fastmath function IncompleteChol(K::Matrix{Float64}, kappa = 2*1e-3)
@@ -14,13 +15,13 @@ See page 20.
   eta = 1e-3 * 0.5*N*kappa
   i = 1
   Kp = K
-  P = speye(Float64,N)
+  P = collect(1:N)
   G = spdiagm(diag(K))
   while sum(diag(G)[i:N]) > eta
     # Find new best element
     j = indmax(diag(G)[i:N]) + i - 1
     # Update P
-    P[:,[i,j]] = P[:,[j,i]]
+    P[[i,j]] = P[[j,i]]
     # Permute elements i and j in Kp
     Kp[:,i], Kp[:,j] = Kp[:,j], Kp[:,i] # En fait on peut utiliser Kp[:,[j,i]]
     Kp[i,:], Kp[j,:] = Kp[j,:], Kp[i,:]
@@ -48,15 +49,16 @@ matrix is never entirely constructed.
 Return P the permutation matrix, G a lower triangular matrix
 and M the rank of the approximation such that:
 |P*K*P' - G*G'| < eta
+P is given as reordering vector.
 See page 20.
 """
 @fastmath function IncompleteChol(K::Function, x::Vector{Float64}, kappa = 2*1e-3)
   # let's chose eta = 10-3 Nk / 2 as in the paper
   N = length(x)
-  eta = 1e-3 * 0.5*N*kappa
+  eta = 1e-3*0.5*N*kappa
   i = 1
   Kp = spzeros(N,N)
-  P = speye(Float64,N)
+  P = collect(1:N)
   G = speye(Float64,N)
   computed = zeros(Int8,N) # On va garder en mémoire les colonnes déja calculées
   for k = 1:N
@@ -66,7 +68,7 @@ See page 20.
     # Find new best element
     j = indmax(diag(G)[i:N]) + i - 1
     # Update P
-    P[:,[i,j]] = P[:,[j,i]]
+    P[[i,j]] = P[[j,i]]
     # Construit les éléments dont on va avoir besoin
     # TODO: Faut t'il verifier si il existent deja avant de les recalculer et
     # TODO: potentiellement les ecraser ?
