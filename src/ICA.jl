@@ -1,5 +1,6 @@
 module ICA
+include("IncompleteCholesky.jl")
+include("Kernels.jl")
+include("preprocess.jl")
 include("FastICA.jl")
-include("KernelICA.jl")
-include("VariationalICA.jl")
 end

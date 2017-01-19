@@ -12,7 +12,8 @@ See page 20.
 @fastmath function IncompleteChol(K::Matrix{Float64}, kappa = 2*1e-3)
   # let's chose eta = 10-3 Nk / 2 as in the paper
   N = size(K,1)
-  eta = 1e-3 * 0.5*N*kappa
+  #eta = 1e-3 * 0.5*N*kappa
+  eta = 1e-4 * 0.5*N*kappa
   i = 1
   Kp = K
   P = collect(1:N)

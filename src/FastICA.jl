@@ -1,5 +1,3 @@
-include("preprocess.jl")
-
 function randO(m,n)
   c = max(m,n)
   w = rand(c,c) - 0.5
@@ -8,12 +6,12 @@ function randO(m,n)
 end
 
 @fastmath function symDecorrel(w::Matrix{Float64})
-  K = w'*w
+  K = w*w'
   D, V = eig(K)
-  return w * V*diagm(D.^(-0.5))*V'
+  return V*diagm(D.^(-0.5))*V' * w
 end
 
-@fastmath function fastICA(X::Matrix{Float64}, c, nrounds = 1000, epsilon = 1e-4)
+@fastmath function fastICA(X::Matrix{Float64}, c, nrounds = 50, epsilon = 1e-4)
   # m x n = Dimensions x Samples
   # c = # of Sources
   (m,n) = size(X)
@@ -24,12 +22,13 @@ end
   while iters < nrounds && error > epsilon
     wold = w
     wx = w * X
-    @simd gwx = tanh(wx)
-    @simd gwxp = ones(c,n) - gwx.^2
-    @simd w = gwx * X' - diagm(gwxp * ones(n)) * w
+    gwx = tanh(wx)
+    gwxp = ones(c,n) - gwx.^2
+    w = gwx * X' - diagm(gwxp * ones(n)) * w
     # Symetric decorelation
     w = symDecorrel(w)
     error = 1 - minimum(abs(diag(w*wold')))
+    iters += 1
   end
   return w, w * X
 end
