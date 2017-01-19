@@ -1,3 +1,10 @@
+### See:
+### Bach, F. R., & Jordan, M. I. (2002).
+### Kernel Independent Component Analysis.
+### Journal of Machine Learning Research, 3, 1–48.
+### https://doi.org/10.1162/153244303768966085
+
+
 """
   gramCentering(G)
 
@@ -195,6 +202,7 @@ end
   initializeSearch(w, d, x, a, b, Ja, C, K)
 
 Find inital conditions for the linesearch.
+Mostly follows the scheme used by: Bach, F. R., & Jordan, M. I. (2002). Kernel Independent Component Analysis. Journal of Machine Learning Research, 3, 1–48. https://doi.org/10.1162/153244303768966085
 """
 function initializeSearch(w::Matrix{Float64}, d, x, a, b, Ja, C::Function, K::Function)
   φ = 1.618
@@ -276,6 +284,8 @@ end
 Perform a linesearch by golden section.
 Not exactly a linesearch per se, but equivalent on a geodesic of the
 Stiefel manifold.
+
+Mostly follows the scheme used by: Bach, F. R., & Jordan, M. I. (2002). Kernel Independent Component Analysis. Journal of Machine Learning Research, 3, 1–48. https://doi.org/10.1162/153244303768966085
 """
 function linesearch(w::Matrix{Float64}, d, x, a, b, c, C::Function, K::Function, tol = 1e-2)
   φ = 1.618
@@ -357,7 +367,7 @@ function kica(x::Matrix{Float64}; C::Function = kgv, K::Function = gaussian, max
     iters = iters + 1
     J = Jmin
   end
-  return w, w'*x
+  return w', w'*x
 end
 
 """
