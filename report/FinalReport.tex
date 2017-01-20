@@ -11,12 +11,17 @@
 \usepackage{fullpage}
 \usepackage{float}
 \usepackage{subfig}
+%\usepackage{minted}
+\usepackage[style=philosophy-modern,
+            hyperref,backref,natbib,
+            backend=biber]{biblatex}
 \bibliography{Biblio}
-\usepackage{minted}
-\usepackage[backend=biber,hyperref=true,backref=true,style=verbose-ibid,maxcitenames=3]{biblatex}
 \usepackage{scrlayer-scrpage}
 \pagestyle{scrheadings}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
 \usepackage[disable]{todonotes}
+\usepackage{subfloat}
 %% Header
 \setheadsepline{.4pt}
 \clearscrheadings
@@ -25,9 +30,10 @@
 \ohead[\pagemark]{\pagemark}
 \cfoot[]{}
 %% Footer
-\usepackage[bottom=2cm,footskip=8mm]{geometry}
+\usepackage[bottom=2cm,footskip=8mm,head=13.6pt]{geometry}
 \usepackage{pgfplots}
 
+\pgfplotsset{compat=1.14}
 \pgfplotsset{grid style={solid,black}}
 \pgfplotsset{minor grid style={dashed,black}}
 %% Font
@@ -56,7 +62,7 @@
     linktoc=page
 }
 
-\graphicspath{{./figures/}}
+\graphicspath{{images/}}
 
 \newcommand{\sgn}{\operatorname{sgn}}
 \newcommand{\conv}{\operatorname{conv}}
@@ -73,6 +79,7 @@
 \newcommand*\cov{\mathop{}\!\mathrm{cov}}
 \newcommand*\var{\mathop{}\!\mathrm{var}}
 \newcommand*\corr{\mathop{}\!\mathrm{corr}}
+\newcommand*\tr{\mathop{}\!\mathrm{tr}}
 
 
 \begin{document}
@@ -81,6 +88,10 @@
 \tableofcontents
 
 \chapter{The ICA framework}
+
+\emph{All code, examples, images and any other material can be found in the \texttt{.zip} file provided. This zip file is actually a \texttt{Git} repository that can be found here: \url{https://gitlab.com/aussetg/pgm-ica/tree/master}}
+
+\vspace{1cm}
 
 In the physical world it is rare for the quantity of interest and the quantity measured to perfectly match. Scientists are used to dealing with measurements mixed with random noise but this is only one way information may be unavailable.
 A very common situation is when our signal of interest, that we will from now on call $s \in \mathcal{R}^{m \times n}$ is actually mixed with itself. To try to recover our signal $s$ we will set up a certain number of recording devices, generally $n$ and from our recorded signals try to recover the sources. If we assume the sources are linearly mixed our problem is then:
@@ -95,7 +106,7 @@ If we somehow knew $A$ the mixing matrix then this problem would be easy to solv
 
 We will see that in fact and quite surprisingly the sole hypothesis of the independence of the components of $s$ is enough to find a solution to the problem. 
 
-There are, however, some limitations: because of the way the problem is posed one cannot hope to recover the real $s$ as for example a scaling or permutation of $A$ leaves the problem unchanged and we therefore cannot hope to recover the magnitudes (and therefore signs) of the $s_i$ or their order. We will also not be able to recover signals if more than $1$ is Gaussian.
+There are, however, some limitations: because of the way the problem is posed one cannot hope to recover the real $s$ as for example a scaling or permutation of $A$ leaves the problem unchanged and we therefore cannot hope to recover the magnitudes (and therefore signs) of the $s_i$ or their order. We will also not be able to recover signals if more than $1$ is Gaussian as the distribution of the orthogonal transformation of a gaussian vector is the same as the original gaussian vector. See \cite{Hyvarinen2001} for a broader view of ICA.
 
 \chapter{Preprocessing}
 
@@ -109,6 +120,13 @@ The first step is to centre the $x$ such that $\mathbb{E} \left[ x \right] = 0$,
 
 This preprocessing greatly simplify the formulas and theory and have the advantage of not adding any constraint: once $W$ is found we only have to add back $W \mathbb{E} \left[ x \right]$ to the $s$ found.
 
+We will also work with RKHS, we therefore reminds that is possible to find the gram matrix of the observations centered in the feature space without explicitly knowing how to centre in the feature space. In the rest of the report all kernel matrices will be considered centred that way. If we note $K$ the uncentred gram matrix then $\tilde{K}$ the centred gram matrix is given by:
+
+\begin{align*}
+	&H = \mathbb{I} - \frac{1}{N} \mathds{1_N} \\
+  	&\tilde{K} = H K H
+\end{align*}
+
 \section{Whitening}\label{whitening}
 
 ICA can be seen a generalization of PCA: while PCA gives uncorrelated components, ICA gives independent components. One implication of this fact is that an ICA solution is necessarily a PCA solution. It is therefore a good idea to first \emph{whiten} the data, i.e. diagonalize its covariance matrix before treating it with ICA.
@@ -119,13 +137,13 @@ The whitening process can be performed efficiently using the semi-definite posit
 	\mathbb{E} \left[ x x^\intercal \right] = U D U^\intercal
 \end{align*}
 
-Therefore if we note $P = U D^{-\frac{1}{2}} U^\intercal$ where $D^{-\frac{1}{2}}$ can be very efficiently computed we have with $\tilde{x} = P x$
+Therefore if we note $P = U D^{-\frac{1}{2}} U^\intercal$, where $D^{-\frac{1}{2}}$ can be very efficiently computed, we have with $\tilde{x} = P x$
 
 \begin{align*}
 	\mathbb{E} \left[ x x^\intercal \right] = \mathbb{I}
 \end{align*}
 
-Computationally, this transformation has the advantage of making $W$ orthogonal, the parameters to estimate are therefore reduced from $n^2$ to $\frac{n (n-1)}{2}$. The new constraint "$W W^\intercal$" also forces $W$ to lie on the Stiefel Manifold, giving very efficient optimization techniques.
+Computationally, this transformation has the advantage of making $W$ orthogonal, the parameters to estimate are therefore reduced from $n^2$ to $\frac{n (n-1)}{2}$. The new constraint "$W W^\intercal = \mathbb{I}$" also forces $W$ to lie on the Stiefel Manifold, giving very efficient optimization techniques.
 
 \chapter{Measuring independence}
 
@@ -182,14 +200,14 @@ Fast-ICA will use the first approach while Kernel-ICA will use the second approa
 
 We will use Fast-ICA as our reference algorithms as well as the method we will use to initialize our Kernel-ICA procedure. We therefore give a quick overview of the Fast-ICA algorithm.
 
-Fast-ICA maximizes an approximation of the negentropy $J(s) = H(s_\text{gauss}) − H(s)$ which is equivalent to the minimizing the mutual information up to a constant.
+Fast-ICA maximizes an approximation of the negentropy $J(s) = H(s_\text{gauss}) - H(s)$ which is equivalent to the minimizing the mutual information up to a constant.
 
 Of course forming the empirical negentropy is equivalent to forming the empirical mutual information and the problem is therefore intractable. The approach taken is therefore to approximate the negentropy using non-linear functions.
 
-In the case of non-quadratic function $G$ \cite{Hyvarinen1998} proves that 
+In the case of non-quadratic function $G$, \cite{Hyvarinen1998}, proves that 
 
 \begin{align*}
-	J(s) \propto \left( \mathbb{E} \left[G(s) \right] − \mathbb{E} \left[ G(\nu) \right] \right)^2
+	J(s) \propto \left( \mathbb{E} \left[G(s) \right] - \mathbb{E} \left[ G(\nu) \right] \right)^2
 \end{align*}
 
 where $\nu \sim \mathcal{N}(0,1)$.
@@ -202,6 +220,22 @@ Two good (optimal in some sense) choices for $G$ are:
 \end{align*}
 
 Fast-ICA is then a relatively simple fixed point algorithm obtained from the newton steps.
+
+\begin{algorithm}
+\caption{Fast-ICA} \label{fastica}
+\begin{algorithmic}
+    \Procedure{FastICA}{$X, G, \epsilon$}
+    
+    \State{$w \gets \textrm{Random orthogonal matrix}$}
+    
+    \While{ $1 - \min(\lvert \diag(w_i w_{i-1}^\intercal) \rvert) > \epsilon$ }
+        \State{$w_{i+1} \gets G(w_{i} X) X^\intercal - \left(G'(w_{i} X) \mathds{1} \times \mathbb{I} \right) w_{i}$}
+        \State{$w_{i+1} \gets (w_{i+1} w_{i+1}^\intercal)^{-\frac{1}{2}} w_{i+1}$}
+    \EndWhile
+    \State \Return $w, w X$
+    \EndProcedure
+\end{algorithmic}    
+\end{algorithm}
 
 By only working with matrix operations all computations can be done in-place and using a \texttt{BLAS}, making Fast-ICA extremely efficient.
 
@@ -307,6 +341,32 @@ With $C(U) = \det U$ for the KGV contrast function or $C(U) = \lambda_\text{min}
 
 In practice the previous computation is intractable because of the dimensions involved and even forming the Gram matrices is impossible. We will therefore use the fact that the Gram matrices are semi-definite positive and use an incomplete Choleski decomposition to find a low rank approximation of the matrices involved.
 
+\begin{algorithm}
+\caption{Incomplete Choleski} \label{chol}
+\begin{algorithmic}
+    \Procedure{IncompleteCholeski}{$K \in \mathbb{R}^{n \times n}, \eta$}
+    
+    \State{$i, K', P \gets 1, K, \mathbb{I}$}
+    \State{$G_{jj} \gets K_{jj}, \forall j$}
+    
+    \While{ $\sum_{j = 1}^n G_{jj} > \eta$ }
+		\State{$j \gets \argmax_{j \in [1,n]} G_{jj}$}
+		\State{$P_{ii} \gets 0 , P_{j^\star j^\star} \gets 0 , P_{ij^\star} \gets 1 , P_{j^\star i} \gets 1$}
+		\State{$K_{1:n,i} \leftrightarrow K_{1:n,j^\star}$}
+		\State{$K_{i,1:n} \leftrightarrow K_{j^\star, 1:n}$}
+		\State{$G_{i,1:i} \leftrightarrow G_{j^\star, 1:i}$}
+		\State{$G_{ii} = \sqrt{G_{jj}}$}
+		\State{$G_{i+1:n,i} \gets \frac{1}{G_{ii}} \left( K'_{i+1:n, i} - \sum_{j=1}^{i-1} G_{i+1:n, j} G_{i,j} \right)$}
+		\For{$j \in [i+1,n]$}
+			\State{$G_{jj} = K_{jj} - \sum_{k = 1}^i G_{jk}^2$}
+		\EndFor
+		\State{$i \gets i + 1$}
+    \EndWhile
+    \State \Return $P, G, M = i-1$
+    \EndProcedure
+\end{algorithmic}    
+\end{algorithm}
+
 If we decompose the $K_i$ as
 \begin{align*}
 	K_i = G_i G_i^\intercal = U_i \Lambda_i U_i^\intercal
@@ -338,7 +398,7 @@ And therefore
 	\det \tilde{\mathcal{K}}_\kappa = \det \mathcal{R}_\kappa
 \end{align*}
 
-We have therefore reduced the computational complexity from $\mathbf{O(m^2 n^3)}$ to $\mathbf{O(m^2 M^2 n)}$ with $\mathbf{M \ll n}$.
+We have therefore reduced the computational complexity from $O(m^2 n^3)$ to $O(m^2 M^2 n)$ with $M \ll n$.
 
 \section{Optimization on a manifold}
 
@@ -349,7 +409,7 @@ As seen in \ref{whitening}, the whitening constrained our problem to:
 	\text{s.t } &W W^\intercal = \mathbb{I}
 \end{align*}
 
-The set $\{ W \mid W W^\intercal = \mathbb{I} \}$ has a particular geometry: it is Riemannian manifolds and most common optimization procedures can be performed on it \cite{Edelman1998}.
+The set $\{ W \mid W W^\intercal = \mathbb{I} \}$ has a particular geometry: it is Riemannian manifolds and most common optimization procedures can be performed on it \cite{Edelman1998}. We use the fact that common procedures using parallel translations in $\mathbb{R}^d$ can be used in a differentiable manifold by using parallel transports along geodesic.
 
 The simplest implementation is steepest descent along geodesics in the direction of the gradient using the following: if $W, H \in \mathcal{R}^{m \times n}$ s.t $W^\intercal W = \mathbb{I}$ and $A = W^\intercal H$ skew-symmetric then the geodesic on the Stiefel manifold emanating from $W$ in direction $H$ is given by the curve
 
@@ -366,20 +426,112 @@ The simplest implementation is steepest descent along geodesics in the direction
 	\end{pmatrix}
 \end{align*}
 						
-Given the cost of the gradient computations a natural extension is to perform conjugate gradient on the manifold, see \cite{Edelman1998} for the procedure. Unfortunately because of the complexity of the implementation I only used steepest descent along a geodesic, as in \cite{Bach2002}. We also note that clever use of the block structure of $\tilde{\mathcal{K}}_\kappa $ gives an efficient $\mathbf {O(m^2)}$ algorithm to compute first order differences and that \cite{Bach2002} provides a closed form of the gradient in the cases of polynomials and Gaussian kernels. I chose to only use finite differences because of their generality.
-
+Given the cost of the gradient computations a natural extension is to perform conjugate gradient on the manifold, see \cite{Edelman1998} for the procedure. Unfortunately because of the complexity of the implementation I only used steepest descent along a geodesic, as in \cite{Bach2002}. We also note that clever use of the block structure of $\tilde{\mathcal{K}}_\kappa$ gives an efficient $O(m^2)$ algorithm to compute first order differences and that \cite{Bach2002} provides a closed form of the gradient in the cases of polynomials and Gaussian kernels. I chose to only use finite differences because of their generality.
 
 \section{Possible improvements}
 
+My current implementation is straight forward and inspired by the implementation of \cite{Bach2002} but several improvements can be obtained.
+
+The first improvement, the easiest, is to notice that building the $\mathcal{R}_\kappa$ is done by block, each block being independent of the others, it is therefore possible to build this matrix entirely in parallel. The finite differences can also be computed in parallel but if parallelism is introduced in the contrast computation then this does not seem necessary.
+
+A second more difficult improvement is to make use of conjugate gradient, the procedure is well understood on the Stiefel manifold and fully described in \cite{Edelman1998}, but the complexity of the implementation is very high.
+
+It would be worthwhile to implement \cite{Shen2009} which uses an approximate newton method.
+
+Finally, it could be worthwhile to compare the implemented contrast functions with other kernel based contrast functions such as HSIC \cite{Shen2007} or COCO \cite{Gretton2005} and \cite{Gretton2005a}. HSIC in particular seems like a perfect fit:
+
+\begin{itemize}
+	\item The empirical estimate of HSIC is simple, it's the trace of a product of Gram matrices.
+	\item No regularization is needed.
+	\item The empirical HSIC converges to HSIC quickly ($1/\sqrt N$).
+	\item The bias is $O(N^{-1})$.
+	\item Experiments show that HSIC achieve superior performances.
+\end{itemize}
+
+HSIC is based on the following expression:
+
+\begin{align*}
+	& \textrm{HSIC}(p_{xy}, \mathcal{F}, \mathcal{G}) := \lVert C_{xy} \rVert^2_{\textrm{HS}} \\
+	\text{with } \quad & C_{xy} := \mathbb{E}_{x,y} \left[ (\phi_\mathcal{F}(x) - \mu_x) \otimes (\phi_\mathcal{G}(y) -  \mu_y) \right]
+\end{align*}
+
+While this formula doesn't seem simple, the finite sample estimator has the form:
+
+\begin{align*}
+	\operatorname{HSIC}(Z_n,  \mathcal{F}, \mathcal{G}) := (m - 1)^{−2} \tr \, K H L H
+\end{align*}
+
+With $K$ and $L$ kernel matrices and $H = \mathds{1} - \frac{1}{m}$.
+
+\vspace{1cm}
+
+\emph{While I didn't have time to finish I started implemented HSIC with approximate newton in the branch \url{https://gitlab.com/aussetg/pgm-ica/tree/FastKICA}. I intend to finish implementing it.}
+
+\appendix
+
 \chapter{Experimental results}
+
+\section{Visual representation of ICA}
+
+This diagram illustrate how ICA works be first whitening the data then finding the optimal rotation.
+
+\begin{figure}[H]
+	\centering
+	\subfloat[Original sources]{\includegraphics[width=0.46\textwidth]{images/s_orig}}
+	\hfill
+	\subfloat[Mixed sources]{\includegraphics[width=0.46\textwidth]{images/x}} \\
+	\vfill
+	\subfloat[Whitening]{\includegraphics[width=0.46\textwidth]{images/x_w}}
+	\hfill
+	\subfloat[ICA]{\includegraphics[width=0.46\textwidth]{images/s_retrieved}}
+\end{figure}
 
 \section{Unmixing Images}
 
+Here we just illustrate source separation by applying it to images. We are interested in unmixing images that have been mixed linearly.
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{images/imagemixing}
+	\caption{Original images, mixed then unmixed.}
+\end{figure}
+
 \section{Finding a natural basis of images}
 
-\section{Measuring performance on known distributions}
+In this problem the quantity of interest isn't $s$ anymore but $A$ or $w$. We interpret this problem as finding a basis of images (if we use $A$) or of detectors (if we use $w$) and $s$ being the realizations of the coefficients for this basis. We actually either find a basis of edges or the corresponding Gabor filters, \cite{Bell}.
 
-\appendix
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=\textwidth]{images/basis}
+	\caption{Gabor filters for the previous images.}
+\end{figure}
+
+\section{Comparing Kernel-ICA and Fast-ICA}
+
+In the accompanying \texttt{Jupyter Notebook} I give an example of comparison of Fast-ICA and Kernel-ICA. For that we need a way of measuring the performance of the algorithms. If we know the real $w$ we can use the Amari distance (which isn't a real distance) as it is invariant by scaling and permutation, the two indeterminate of our problem.
+
+We give here the Amari distance:
+
+\begin{align*}
+	d(V,W) = \frac{1}{2 m} \sum_{i = 1}^m \left( \frac{\sum_{j = 1}^m \lvert a_{ij} \rvert}{\max_j \lvert a_{ij} \rvert} - 1 \right) + \frac{1}{2 m} \sum_{j = 1}^m \left( \frac{\sum_{i = 1}^m \lvert a_{ij} \rvert}{\max_i \lvert a_{ij} \rvert} - 1 \right)
+\end{align*}
+
+We compare both algorithms on a hard distribution (with zero excess kurtosis).
+
+\begin{figure}[H]
+	\centering
+	\subfloat[Original sources]{\includegraphics[width=0.46\textwidth]{images/sg_orig}}
+	\hfill
+	\subfloat[Mixed sources]{\includegraphics[width=0.46\textwidth]{images/sg_mixed}} \\
+	\vfill
+	\subfloat[Fast-ICA]{\includegraphics[width=0.46\textwidth]{images/sg_fica}}
+	\hfill
+	\subfloat[Kernel-ICA]{\includegraphics[width=0.46\textwidth]{images/sg_kica}}
+\end{figure}
+
+\section{Cocktail party and more}
+
+I have other examples less suitable for a paper report in the accompanying notebook.
 
 \listoftodos
 
