@@ -94,7 +94,7 @@
 \vspace{1cm}
 
 In the physical world it is rare for the quantity of interest and the quantity measured to perfectly match. Scientists are used to dealing with measurements mixed with random noise but this is only one way information may be unavailable.
-A very common situation is when our signal of interest, that we will from now on call $s \in \mathcal{R}^{m \times n}$ is actually mixed with itself. To try to recover our signal $s$ we will set up a certain number of recording devices, generally $n$ and from our recorded signals try to recover the sources. If we assume the sources are linearly mixed our problem is then:
+A very common situation is when our signal of interest, that we will from now on call $s \in \mathcal{R}^{m \times n}$ is actually mixed with itself. To try to recover our signal $s$ we will set up a $k$ recording devices, (generally $k = m$) and from our recorded signals try to recover the sources. If we assume the sources are linearly mixed our problem is then:
 
 \begin{align*}
 	x = A s
@@ -112,7 +112,7 @@ There are, however, some limitations: because of the way the problem is posed on
 
 Before proceeding with the rest, we will quickly give two important preprocessing steps. 
 
-This preprocessing has two important functions: it greatly simplifies the theory at no additional cost, and it while reduce the computational complexity.
+This preprocessing has two important functions: it greatly simplifies the theory at no additional cost, and it will reduce the computational complexity.
 
 \section{Centering}
 
@@ -120,7 +120,7 @@ The first step is to centre the $x$ such that $\mathbb{E} \left[ x \right] = 0$,
 
 This preprocessing greatly simplify the formulas and theory and have the advantage of not adding any constraint: once $W$ is found we only have to add back $W \mathbb{E} \left[ x \right]$ to the $s$ found.
 
-We will also work with RKHS, we therefore reminds that is possible to find the gram matrix of the observations centered in the feature space without explicitly knowing how to centre in the feature space. In the rest of the report all kernel matrices will be considered centred that way. If we note $K$ the uncentred gram matrix then $\tilde{K}$ the centred gram matrix is given by:
+We will also work with RKHS, we therefore reminds that is possible to find the gram matrix of the observations centered in the feature space without explicitly knowing how to centre in the feature space. In the rest of the report all kernel matrices will be considered centered that way. If we note $K$ the uncentered gram matrix then $\tilde{K}$ the centered gram matrix is given by:
 
 \begin{align*}
 	&H = \mathbb{I} - \frac{1}{N} \mathds{1_N} \\
@@ -147,7 +147,7 @@ Computationally, this transformation has the advantage of making $W$ orthogonal,
 
 \chapter{Measuring independence}
 
-It is possible to treat the problem as a parametric one and to fix a certain form for the distributions but that case is quite limiting. We while therefore work in a semi-parametric framework with parameter $W$ the unmixing matrix:
+It is possible to treat the problem as a parametric one and to fix a certain form for the distributions but that case is quite limiting. We will therefore work in a semi-parametric framework with parameter $W$ the unmixing matrix:
 
 \begin{align*}
 	s = W y
@@ -409,7 +409,7 @@ As seen in \ref{whitening}, the whitening constrained our problem to:
 	\text{s.t } &W W^\intercal = \mathbb{I}
 \end{align*}
 
-The set $\{ W \mid W W^\intercal = \mathbb{I} \}$ has a particular geometry: it is Riemannian manifolds and most common optimization procedures can be performed on it \cite{Edelman1998}. We use the fact that common procedures using parallel translations in $\mathbb{R}^d$ can be used in a differentiable manifold by using parallel transports along geodesic.
+The set $\{ W \mid W W^\intercal = \mathbb{I} \}$ has a particular geometry: it is Riemannian manifolds and most common optimization procedures can be performed on it \cite{Edelman1998}. We use the fact that common procedures using parallel translations in $\mathbb{R}^d$ can be used in a differentiable manifold by using parallel transports along geodesics.
 
 The simplest implementation is steepest descent along geodesics in the direction of the gradient using the following: if $W, H \in \mathcal{R}^{m \times n}$ s.t $W^\intercal W = \mathbb{I}$ and $A = W^\intercal H$ skew-symmetric then the geodesic on the Stiefel manifold emanating from $W$ in direction $H$ is given by the curve
 
@@ -513,8 +513,10 @@ In the accompanying \texttt{Jupyter Notebook} I give an example of comparison of
 We give here the Amari distance:
 
 \begin{align*}
-	d(V,W) = \frac{1}{2 m} \sum_{i = 1}^m \left( \frac{\sum_{j = 1}^m \lvert a_{ij} \rvert}{\max_j \lvert a_{ij} \rvert} - 1 \right) + \frac{1}{2 m} \sum_{j = 1}^m \left( \frac{\sum_{i = 1}^m \lvert a_{ij} \rvert}{\max_i \lvert a_{ij} \rvert} - 1 \right)
+	&d(V,W) = \frac{1}{2 m} \sum_{i = 1}^m \left( \frac{\sum_{j = 1}^m \lvert a_{ij} \rvert}{\max_j \lvert a_{ij} \rvert} - 1 \right) + \frac{1}{2 m} \sum_{j = 1}^m \left( \frac{\sum_{i = 1}^m \lvert a_{ij} \rvert}{\max_i \lvert a_{ij} \rvert} - 1 \right) \\
+	\text{with } &a = V^{-1} W
 \end{align*}
+
 
 We compare both algorithms on a hard distribution (with zero excess kurtosis).
 
