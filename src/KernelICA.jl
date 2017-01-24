@@ -36,7 +36,7 @@ function gram(K::Function, x::Vector{Float64})
   # Probably a numerical problem. So we fix that
   K = N0*Km*N0
   K = 0.5*(Km+Km')
-  return Km
+  return K
 end
 
 """
